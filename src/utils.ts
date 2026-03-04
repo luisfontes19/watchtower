@@ -23,3 +23,22 @@ export const getWorkspacesFile = (file: WorkspaceFile): vscode.Uri[] => {
         }
     }) || null
 }
+
+
+export const findFiles = async (pattern: string): Promise<vscode.Uri[]> => {
+    const agentFiles: vscode.Uri[] = []
+    const workspaceFolders = vscode.workspace.workspaceFolders
+
+    if (!workspaceFolders) return agentFiles
+
+    for (const folder of workspaceFolders) {
+
+        const files = await vscode.workspace.findFiles(new vscode.RelativePattern(folder, pattern), '**/node_modules/**')
+
+        console.log("Found agent files:", files.map(f => f.fsPath))
+        agentFiles.push(...files)
+    }
+
+
+    return agentFiles
+}

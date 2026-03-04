@@ -1,15 +1,31 @@
+import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { Finding, FindingType } from '../types'
-import { isActiveTab } from '../utils'
-import { Analyzer, DevContainerFileAnalyzerParams } from './types'
+import { findFiles, isActiveTab, WorkspaceFile } from '../utils'
+import { DevContainerFileAnalyzerParams, StaticAnalyzer } from './types'
 
-export class AgentsAnalyzer implements Analyzer {
+export class DevContainerAnalyzer {
 
-    async analyze(options: DevContainerFileAnalyzerParams): Promise<Finding[]> {
-        return []
+    static async analyze(options?: DevContainerFileAnalyzerParams): Promise<Finding[]> {
+        const findings: Finding[] = []
+
+        for (const devContainer of await findFiles(WorkspaceFile.DevContainer)) {
+            findings.push(...await DevContainerAnalyzer.analyzeFile(devContainer))
+        }
+
+        return findings
     }
 
-    checkMcpServers(json: Record<string, unknown>): Finding[] {
+    static async analyzeFile(uri: vscode.Uri): Promise<Finding[]> {
+        const findings: Finding[] = []
+        const content = await vscode.workspace.fs.readFile(uri)
+        const json = jsonc.parse(content.toString()) as Record<string, unknown>
+        findings.push(...DevContainerAnalyzer.checkMcpServers(json))
+
+        return findings
+    }
+
+    static checkMcpServers(json: Record<string, unknown>): Finding[] {
         const findings: Finding[] = []
         const servers = (((json?.customizations as Record<string, unknown>)?.vscode as Record<string, unknown>)?.mcp as Record<string, unknown>)?.servers as Record<string, unknown> | undefined
         for (const serverName of Object.keys(servers ?? {})) {
@@ -25,7 +41,7 @@ export class AgentsAnalyzer implements Analyzer {
 
     }
 
-    async onChange(uri: vscode.Uri): Promise<Finding[]> {
+    static async onChange(uri: vscode.Uri): Promise<Finding[]> {
         const findings: Finding[] = []
 
         const active = isActiveTab(uri)
@@ -40,8 +56,12 @@ export class AgentsAnalyzer implements Analyzer {
             })
         }
 
+        findings.push(...await DevContainerAnalyzer.analyzeFile(uri))
+
 
         return findings
 
     }
 }
+
+const _checkStatic: StaticAnalyzer = DevContainerAnalyzer

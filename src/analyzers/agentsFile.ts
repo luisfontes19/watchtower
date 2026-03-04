@@ -1,25 +1,29 @@
 import * as vscode from 'vscode'
 import { Finding, FindingType } from '../types'
 import { isActiveTab } from '../utils'
-import { Analyzer, VscodeAgentsFileAnalyzerParams } from './types'
+import { StaticAnalyzer, VscodeAgentsFileAnalyzerParams } from './types'
 
 
-export class AgentsAnalyzer implements Analyzer {
+export class AgentsAnalyzer {
 
     public static readonly AGENTS_FILE_NAMES = [
-        /^CLAUDE\.md$/i,
-        /^\.github\/copilot-instructions\.md$/i,
-        /^\.github\/instructions\/.*\.instructions\.md$/i,
-        /^\.windsur$/i,
-        /AGENTS.md$/i, //do not use ^ and  as any file named AGENTS.md is used by copilot
-        /^.agents\/.*\/SKILL.md/i
+        "CLAUDE\.md",
+        ".github/copilot-instructions.md",
+        ".github/instructions/*.instructions.md",
+        ".windsurf",
+        "*AGENTS.md", //do not use ^ and  as any file named AGENTS.md is used by copilot
+        ".agents/**/SKILL.md"
+
     ]
 
-    async analyze(options: VscodeAgentsFileAnalyzerParams): Promise<Finding[]> {
-        return []
+    static async analyze(options?: VscodeAgentsFileAnalyzerParams): Promise<Finding[]> {
+        //const agentFiles = await Promise.all(AgentsAnalyzer.AGENTS_FILE_NAMES.map(f => findFiles(f))).then(results => results.flat())
+        const findings: Finding[] = []
+
+        return findings
     }
 
-    async onChange(uri: vscode.Uri): Promise<Finding[]> {
+    static async onChange(uri: vscode.Uri): Promise<Finding[]> {
         const findings: Finding[] = []
 
         const active = isActiveTab(uri)
@@ -40,3 +44,5 @@ export class AgentsAnalyzer implements Analyzer {
     }
 
 }
+
+const _checkStatic: StaticAnalyzer = AgentsAnalyzer

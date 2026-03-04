@@ -1,21 +1,42 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { Finding, FindingType } from '../types'
-import { Analyzer, JsonFileAnalyzerParams } from './types'
+import { findFiles } from '../utils'
+import { JsonFileAnalyzerParams, StaticAnalyzer } from './types'
 
 const MAX_PARAM_LENGTH = 30
 const MAX_PARAM_COUNT = 10
 
-export class JsonFile implements Analyzer {
-    constructor() { }
+export class JsonFile {
 
-    public async analyze(params: JsonFileAnalyzerParams): Promise<Finding[]> {
-        const json = (typeof params.json === 'string') ? jsonc.parse(params.json) : params.json as Record<string, unknown>
+    public static async analyze(params?: JsonFileAnalyzerParams): Promise<Finding[]> {
         const findings: Finding[] = []
 
-        if (!("$schema" in json)) return findings
+        const jsonFiles = await findFiles('**/*.json')
+        console.log("Found JSON files:", jsonFiles.map(f => f.fsPath))
+
+        const results = await Promise.all(
+            jsonFiles.map(file =>
+                vscode.workspace.fs.readFile(file).then(content => {
+                    const contentStr = content.toString()
+                    return JsonFile.checkFileContent(contentStr)
+                })
+            )
+        )
+
+        findings.push(...results.flat())
+
+        return findings
+    }
+
+    public static checkFileContent(content: string): Finding[] {
+        const findings: Finding[] = []
+
+        const json = jsonc.parse(content.toString())
+        if (!json?.["$schema"]) return []
 
         const schema = json["$schema"] as string
+
         findings.push(...JsonFile.checkSchemaUrl(schema))
 
         return findings
@@ -34,7 +55,7 @@ export class JsonFile implements Analyzer {
         if (entries.length > MAX_PARAM_COUNT) {
             findings.push({
                 type: FindingType.JsonSchema,
-                name: '$schema',
+                name: 'Potential Data Exfiltration via Json $schema',
                 detail: `Schema URL contains ${entries.length} query parameters. A high number of query parameters may indicate potential data exfiltration (max ${MAX_PARAM_COUNT})`,
                 severity: 'medium',
                 file: '.vscode/settings.json'
@@ -45,7 +66,7 @@ export class JsonFile implements Analyzer {
             if (name.length > MAX_PARAM_LENGTH) {
                 findings.push({
                     type: FindingType.JsonSchema,
-                    name: '$schema',
+                    name: 'Potential Data Exfiltration via Json $schema',
                     detail: `Schema URL query parameter name "${name}" is ${name.length} chars. It seems too big, which may indicate data exfiltration (max ${MAX_PARAM_LENGTH})`,
                     severity: 'medium',
                     file: '.vscode/settings.json'
@@ -54,7 +75,7 @@ export class JsonFile implements Analyzer {
             if (value.length > MAX_PARAM_LENGTH) {
                 findings.push({
                     type: FindingType.JsonSchema,
-                    name: '$schema',
+                    name: 'Potential Data Exfiltration via Json $schema',
                     detail: `Schema URL query parameter value "${value}" is ${value.length} chars. It seems too big, which may indicate data exfiltration (max ${MAX_PARAM_LENGTH})`,
                     severity: 'medium',
                     file: '.vscode/settings.json'
@@ -65,3 +86,5 @@ export class JsonFile implements Analyzer {
         return findings
     }
 }
+
+const _checkStatic: StaticAnalyzer = JsonFile

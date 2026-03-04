@@ -1,27 +1,33 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { Finding, FindingType } from '../types'
-import { getWorkspacesFile, isActiveTab, WorkspaceFile } from '../utils'
-import { Analyzer, VscodeSettingsFileAnalyzerParams } from './types'
-export class SettingsAnalyzer implements Analyzer {
+import { findFiles, isActiveTab, WorkspaceFile } from '../utils'
+import { StaticAnalyzer, VscodeSettingsFileAnalyzerParams } from './types'
+
+export class SettingsAnalyzer {
 
     // would be nice to detect changes to:
     //      chat.tools.autoApprove
     //      *.executablePath
 
-    async analyze(options: VscodeSettingsFileAnalyzerParams): Promise<Finding[]> {
+    static async analyze(options?: VscodeSettingsFileAnalyzerParams): Promise<Finding[]> {
         const findings: Finding[] = []
 
-        for (const uri of getWorkspacesFile(WorkspaceFile.Settings)) {
-            const fileFindings = await SettingsAnalyzer.checkBinarySettings(uri)
-            findings.push(...fileFindings)
+        for (const uri of await findFiles(WorkspaceFile.Settings)) {
+            findings.push(...await SettingsAnalyzer.checkFile(uri))
         }
 
         return findings
     }
 
+    static async checkFile(uri: vscode.Uri): Promise<Finding[]> {
+        const findings: Finding[] = []
+        const fileFindings = await SettingsAnalyzer.checkBinarySettings(uri)
+        findings.push(...fileFindings)
+        return findings
+    }
 
-    public async onChange(uri: vscode.Uri): Promise<Finding[]> {
+    public static async onChange(uri: vscode.Uri): Promise<Finding[]> {
         const findings: Finding[] = []
 
         const active = isActiveTab(uri)
@@ -76,3 +82,5 @@ export class SettingsAnalyzer implements Analyzer {
 
 
 }
+
+const _checkStatic: StaticAnalyzer = SettingsAnalyzer

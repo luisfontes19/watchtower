@@ -14,15 +14,15 @@ export interface VscodeSettingsFileAnalyzerParams {
 }
 
 export interface VscodeAgentsFileAnalyzerParams {
-    fileUri: vscode.Uri,
+
 }
 
 export interface DevContainerFileAnalyzerParams {
 
 }
 
-export interface Analyzer {
-    analyze(options?: VscodeSettingsFileAnalyzerParams | JsonFileAnalyzerParams | TaskAnalyzerParams): Promise<Finding[]>
+export interface StaticAnalyzer {
+    analyze(options?: VscodeSettingsFileAnalyzerParams | JsonFileAnalyzerParams | TaskAnalyzerParams | DevContainerFileAnalyzerParams | VscodeAgentsFileAnalyzerParams): Promise<Finding[]>
     onChange?(uri: vscode.Uri): Promise<Finding[]>
 }
 

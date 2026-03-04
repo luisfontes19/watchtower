@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { AgentsAnalyzer } from './analyzers/agentsFile'
+import { DevContainerAnalyzer } from './analyzers/devcontainerFile'
 import { JsonFile } from './analyzers/jsonFile'
 import { TaskAnalyzer } from './analyzers/task'
 import { SettingsAnalyzer } from './analyzers/vscodeSettingsFile'
@@ -31,8 +32,10 @@ export class Shield {
 
     public async analyze() {
         const promises = []
-        const taskAnalyzer = new TaskAnalyzer()
-        promises.push(taskAnalyzer.analyze({}))
+        promises.push(TaskAnalyzer.analyze())
+        promises.push(SettingsAnalyzer.analyze())
+        promises.push(DevContainerAnalyzer.analyze())
+        promises.push(JsonFile.analyze())
 
         const results = await Promise.all(promises)
         const findings = results.flat()
@@ -92,19 +95,23 @@ export class Shield {
         const promises = []
         const isActiveTab = vscode.window.activeTextEditor?.document.uri.fsPath === document.uri.fsPath
 
-        if (document.uri.fsPath.endsWith('.json')) {
-            const jsonAnalyzer = new JsonFile()
-            promises.push(jsonAnalyzer.analyze({ json: document.getText() }))
-        }
-        if (document.uri.fsPath.endsWith('.vscode/settings.json')) {
-            const settingsAnalyzer = new SettingsAnalyzer()
-            promises.push(settingsAnalyzer.onChange(document.uri))
-        }
 
-        if (document.uri.fsPath.endsWith('.md')) {
-            const agentsAnalyzer = new AgentsAnalyzer()
-            promises.push(agentsAnalyzer.onChange(document.uri))
-        }
+        if (document.uri.fsPath.endsWith('.vscode/settings.json'))
+            promises.push(SettingsAnalyzer.onChange(document.uri))
+
+        if (document.uri.fsPath.endsWith('.devcontainer/devcontainer.json'))
+            promises.push(DevContainerAnalyzer.onChange(document.uri))
+
+        if (document.uri.fsPath.endsWith('.json'))
+            promises.push(JsonFile.checkFileContent(document.getText()))
+
+        if (document.uri.fsPath.endsWith('.vscode/tasks.json'))
+            promises.push(TaskAnalyzer.analyze(document.uri)) // TODO: Change to a onCHange
+
+
+        if (document.uri.fsPath.endsWith('.md'))
+            promises.push(AgentsAnalyzer.onChange(document.uri))
+
 
 
         const results = await Promise.all(promises)
