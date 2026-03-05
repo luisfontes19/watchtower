@@ -21,10 +21,10 @@ const renderFinding = (f: Finding, index: number) => {
         <div class="finding" style="border-left:3px solid ${sev.border};background:${sev.bg};border-radius:8px;padding:16px 20px;margin-bottom:14px;">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
                 <span style="font-size:1.15em;">${icon}</span>
-                <span style="font-weight:700;font-size:1.05em;color:#e0e0e0;">${f.name}</span>
+                <span style="font-weight:700;font-size:1.05em;color:#e0e0e0;">[${f.type}] ${f.name}</span>
                 <span class="badge" style="background:${sev.border};color:${sev.color};padding:2px 8px;border-radius:4px;font-size:0.75em;font-weight:700;letter-spacing:0.5px;">${sev.emoji} ${sev.label}</span>
             </div>
-            <p style="margin:6px 0 8px 28px;color:#bdbdbd;font-size:0.95em;line-height:1.5;">${f.detail}</p>
+            <p style="margin:6px 0 8px 28px;color:#bdbdbd;font-size:0.95em;line-height:1.5;">${f.detail.replace(/\n/g, '<br>')}</p>
             ${f.file ? `<div style="margin-left:28px;font-size:0.82em;color:#64b5f6;">📂 <code style="background:rgba(100,181,246,0.1);padding:2px 6px;border-radius:3px;">${f.file}</code></div>` : ''}
         </div>`
 }

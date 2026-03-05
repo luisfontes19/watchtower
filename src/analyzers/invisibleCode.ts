@@ -18,7 +18,7 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
         if (matches) {
             for (const match of matches) {
                 findings.push({
-                    type: FindingType.SilentFileChange,
+                    type: FindingType.InvisibleCode,
                     name: `Invisible Code Detected on ${vscode.workspace.asRelativePath(uri)}`,
                     detail: `Invisible code as the name suggests is code that is invisible to the user, it can be used to hide malicious code in plain sight. A sequence of ${match.length} invisible characters was detected in the file ${vscode.workspace.asRelativePath(uri)}. There is no legitimate reason to have invisible characters in code`,
                     priority: 'high',

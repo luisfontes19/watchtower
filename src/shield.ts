@@ -3,8 +3,10 @@ import { AgentsAnalyzer } from './analyzers/agentsFile'
 import { DevContainerAnalyzer } from './analyzers/devcontainerFile'
 import { InvisibleCodeAnalyzer } from './analyzers/invisibleCode'
 import { JsonFile } from './analyzers/jsonFile'
-import { TaskAnalyzer } from './analyzers/task'
-import { SettingsAnalyzer } from './analyzers/vscodeSettingsFile'
+import { LaunchAnalyzer } from './analyzers/launchFile'
+import { SettingsAnalyzer } from './analyzers/settingsFile'
+import { StaticAnalyzer } from './analyzers/staticAnalyzer'
+import { TaskAnalyzer } from './analyzers/taskFile'
 import { generateHTMLReport } from './report'
 import { Finding } from './types'
 
@@ -12,6 +14,13 @@ export class Shield {
     private static instance: Shield
     private config: vscode.WorkspaceConfiguration
 
+    private agentsAnalyzer: AgentsAnalyzer
+    private devContainerAnalyzer: DevContainerAnalyzer
+    private invisibleCodeAnalyzer: InvisibleCodeAnalyzer
+    private jsonFileAnalyzer: JsonFile
+    private taskAnalyzer: TaskAnalyzer
+    private settingsAnalyzer: SettingsAnalyzer
+    private launchAnalyzer: LaunchAnalyzer
 
 
 
@@ -21,6 +30,13 @@ export class Shield {
         this.config.update("test", true, vscode.ConfigurationTarget.Workspace).then(() => {
             console.log("Configuration updated successfully")
         })
+        this.agentsAnalyzer = new AgentsAnalyzer()
+        this.devContainerAnalyzer = new DevContainerAnalyzer()
+        this.invisibleCodeAnalyzer = new InvisibleCodeAnalyzer()
+        this.jsonFileAnalyzer = new JsonFile()
+        this.taskAnalyzer = new TaskAnalyzer()
+        this.settingsAnalyzer = new SettingsAnalyzer()
+        this.launchAnalyzer = new LaunchAnalyzer()
     }
 
 
@@ -72,14 +88,41 @@ export class Shield {
     }
 
     public async onFileCreated(uri: vscode.Uri) {
-        const findings = await this.analyzeFile(uri)
+        const findings = await this.analyzeFile(uri, undefined, true)
         await this.showAlerts(findings)
     }
 
     public async onFileChanged(uri: vscode.Uri) {
 
-        const findings = await this.analyzeFile(uri)
+        const findings = await this.analyzeFile(uri, undefined, true)
         await this.showAlerts(findings)
+    }
+
+    public getSensitiveFileAnalyzers(uri: vscode.Uri): StaticAnalyzer[] {
+        const relativePath = vscode.workspace.asRelativePath(uri, false)
+        const path = uri.fsPath
+
+        const analyzers: StaticAnalyzer[] = []
+
+        if (path.endsWith('.vscode/settings.json'))
+            analyzers.push(this.settingsAnalyzer)
+
+        if (path.endsWith('.devcontainer/devcontainer.json'))
+            analyzers.push(this.devContainerAnalyzer)
+
+        if (path.endsWith('.json'))
+            analyzers.push(this.jsonFileAnalyzer)
+
+        if (path.endsWith('.vscode/tasks.json'))
+            analyzers.push(this.taskAnalyzer)
+
+        if (path.endsWith('.vscode/launch.json'))
+            analyzers.push(this.launchAnalyzer)
+
+        if (path.endsWith('.md') && AgentsAnalyzer.isAgentFile(uri))
+            analyzers.push(this.agentsAnalyzer)
+
+        return analyzers
     }
 
     public async analyzeFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>, fileEdited: boolean = false): Promise<Finding[]> {
@@ -92,44 +135,34 @@ export class Shield {
             return data
         }
 
+        if (uri.fsPath.endsWith('.vscode/settings.json'))
+            promises.push(this.settingsAnalyzer.checkFile(uri, await ensureFileContent()))
 
-        if (uri.fsPath.endsWith('.vscode/settings.json')) {
-            const analyzer = new SettingsAnalyzer()
+        if (uri.fsPath.endsWith('.devcontainer/devcontainer.json'))
+            promises.push(this.devContainerAnalyzer.checkFile(uri, await ensureFileContent()))
 
-            if (fileEdited) promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
-            promises.push(analyzer.checkFile(uri, await ensureFileContent()))
+
+        if (uri.fsPath.endsWith('.json'))
+            promises.push(this.jsonFileAnalyzer.checkFile(uri, await ensureFileContent()))
+
+        if (uri.fsPath.endsWith('.vscode/tasks.json'))
+            promises.push(this.taskAnalyzer.checkFile(uri, await ensureFileContent()))
+
+        if (uri.fsPath.endsWith('.md'))
+            promises.push(this.agentsAnalyzer.checkFile(uri, await ensureFileContent()))
+
+        if (uri.fsPath.endsWith('.vscode/launch.json'))
+            promises.push(this.launchAnalyzer.checkFile(uri, await ensureFileContent()))
+
+
+        if (fileEdited) {
+            const analyzers = this.getSensitiveFileAnalyzers(uri)
+            for (const analyzer of analyzers) {
+                promises.push(analyzer.sensitiveFileBackgroundEditCheck(uri))
+            }
         }
 
-
-        if (uri.fsPath.endsWith('.devcontainer/devcontainer.json')) {
-            const analyzer = new DevContainerAnalyzer()
-            if (fileEdited) promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
-            promises.push(analyzer.checkFile(uri, await ensureFileContent()))
-        }
-
-        if (uri.fsPath.endsWith('.json')) {
-            const analyzer = new JsonFile()
-            if (fileEdited) promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
-            promises.push(analyzer.checkFile(uri, await ensureFileContent()))
-        }
-
-        if (uri.fsPath.endsWith('.vscode/tasks.json')) {
-            const analyzer = new TaskAnalyzer()
-            if (fileEdited) promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
-            promises.push(analyzer.checkFile(uri, await ensureFileContent()))
-        }
-
-
-        if (uri.fsPath.endsWith('.md')) {
-            const analyzer = new AgentsAnalyzer()
-            if (AgentsAnalyzer.isAgentFile(uri) && fileEdited)
-                promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
-
-            promises.push(analyzer.checkFile(uri, await ensureFileContent()))
-        }
-
-
-        promises.push(new InvisibleCodeAnalyzer().checkFile(uri, await ensureFileContent()))
+        promises.push(this.invisibleCodeAnalyzer.checkFile(uri, await ensureFileContent()))
 
         const results = await Promise.all(promises)
         return results.flat()

@@ -32,10 +32,12 @@ export class JsonFile extends StaticAnalyzer {
         const params = new URLSearchParams(query)
         const entries = [...params.entries()]
 
+        const relativeFile = vscode.workspace.asRelativePath(fileUri)
+
         if (entries.length > MAX_PARAM_COUNT) {
             findings.push({
                 type: FindingType.JsonSchema,
-                name: `Potential data exfiltration via json $schema in ${fileUri} (Too many query params)`,
+                name: `Potential data exfiltration via json $schema in ${relativeFile} (Too many query params)`,
                 detail: `Schema URL (${url}) contains ${entries.length} query parameters. A high number of query parameters may indicate potential data exfiltration`,
                 priority: 'medium',
                 file: fileUri.fsPath
@@ -46,7 +48,7 @@ export class JsonFile extends StaticAnalyzer {
             if (name.length > MAX_PARAM_LENGTH) {
                 findings.push({
                     type: FindingType.JsonSchema,
-                    name: `Potential data exfiltration via json $schema in ${fileUri} (Big query param name)`,
+                    name: `Potential data exfiltration via json $schema in ${relativeFile} (Big query param name)`,
                     detail: `Schema URL query parameter name "${name}" is ${name.length} chars. It seems too big, which may indicate data exfiltration`,
                     priority: 'medium',
                     file: fileUri.fsPath
@@ -55,7 +57,7 @@ export class JsonFile extends StaticAnalyzer {
             if (value.length > MAX_PARAM_LENGTH) {
                 findings.push({
                     type: FindingType.JsonSchema,
-                    name: `Potential data exfiltration via json $schema in ${fileUri} (Big query param value)`,
+                    name: `Potential data exfiltration via json $schema in ${relativeFile} (Big query param value)`,
                     detail: `Schema URL query parameter value "${value}" is ${value.length} chars. It seems too big, which may indicate data exfiltration`,
                     priority: 'medium',
                     file: fileUri.fsPath

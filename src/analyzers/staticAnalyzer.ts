@@ -32,6 +32,7 @@ export abstract class StaticAnalyzer {
 
     editedInBackground(uri: vscode.Uri): boolean {
         const activeEditor = vscode.window.activeTextEditor
+        console.log(activeEditor?.document.uri.fsPath, uri.fsPath)
         return !activeEditor || activeEditor.document.uri.fsPath !== uri.fsPath
     }
 }
