@@ -32,10 +32,31 @@ export class Shield {
     }
 
     public async analyze() {
-        const findings: Finding[] = []
+        return vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: 'VSCode Shield', cancellable: true }, async (progress, token) => {
+            const findings: Finding[] = []
 
-        this.displayFindingsPage(findings)
-        return findings
+            progress.report({ increment: 0, message: 'Listing project files...' })
+            const files = await vscode.workspace.findFiles('**/*', '**/node_modules/**')
+
+            if (token.isCancellationRequested) return findings
+
+            const totalFiles = files.length
+            const incrementPerFile = 100 / totalFiles
+
+            for (let i = 0; i < totalFiles; i++) {
+                if (token.isCancellationRequested) break
+
+                const file = files[i]
+                const relativePath = vscode.workspace.asRelativePath(file)
+                progress.report({ increment: incrementPerFile, message: `Analyzing ${relativePath} (${i + 1}/${totalFiles})` })
+
+                const fileFindings = await this.analyzeFile(file)
+                findings.push(...fileFindings)
+            }
+
+            this.displayFindingsPage(findings)
+            return findings
+        })
     }
 
     private displayFindingsPage(findings: Finding[]) {
@@ -70,20 +91,39 @@ export class Shield {
         }
 
 
-        if (uri.fsPath.endsWith('.vscode/settings.json'))
-            promises.push(new SettingsAnalyzer().checkFile(uri, await ensureFileContent()))
+        if (uri.fsPath.endsWith('.vscode/settings.json')) {
+            const analyzer = new SettingsAnalyzer()
+            promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
+            promises.push(analyzer.checkFile(uri, await ensureFileContent()))
+        }
 
-        if (uri.fsPath.endsWith('.devcontainer/devcontainer.json'))
-            promises.push(new DevContainerAnalyzer().checkFile(uri, await ensureFileContent()))
 
-        if (uri.fsPath.endsWith('.json'))
-            promises.push(new JsonFile().checkFile(uri, await ensureFileContent()))
+        if (uri.fsPath.endsWith('.devcontainer/devcontainer.json')) {
+            const analyzer = new DevContainerAnalyzer()
+            promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
+            promises.push(analyzer.checkFile(uri, await ensureFileContent()))
+        }
 
-        if (uri.fsPath.endsWith('.vscode/tasks.json'))
-            promises.push(new TaskAnalyzer().checkFile(uri, await ensureFileContent()))
+        if (uri.fsPath.endsWith('.json')) {
+            const analyzer = new JsonFile()
+            promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
+            promises.push(analyzer.checkFile(uri, await ensureFileContent()))
+        }
 
-        if (uri.fsPath.endsWith('.md'))
-            promises.push(new AgentsAnalyzer().checkFile(uri, await ensureFileContent()))
+        if (uri.fsPath.endsWith('.vscode/tasks.json')) {
+            const analyzer = new TaskAnalyzer()
+            promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
+            promises.push(analyzer.checkFile(uri, await ensureFileContent()))
+        }
+
+
+        if (uri.fsPath.endsWith('.md')) {
+            const analyzer = new AgentsAnalyzer()
+            if (AgentsAnalyzer.isAgentFile(uri))
+                promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
+
+            promises.push(analyzer.checkFile(uri, await ensureFileContent()))
+        }
 
 
         promises.push(new InvisibleCodeAnalyzer().checkFile(uri, await ensureFileContent()))

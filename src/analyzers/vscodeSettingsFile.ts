@@ -1,8 +1,7 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { Finding, FindingType } from '../types'
-import { isActiveTab } from '../utils'
-import { StaticAnalyzer } from './types'
+import { StaticAnalyzer } from './staticAnalyzer'
 
 export class SettingsAnalyzer extends StaticAnalyzer {
 
@@ -23,10 +22,11 @@ export class SettingsAnalyzer extends StaticAnalyzer {
                 const currentPath = path ? `${path}.${key}` : key
                 if (key.toLowerCase().includes('interpreterpath')) {
                     findings.push({
-                        type: FindingType.SilentFileChange,
-                        name: 'Custom Interpreter Path Detected',
-                        detail: `Setting "${currentPath}" points to a custom interpreter path: "${value}". This could be used to execute arbitrary binaries.`,
-                        severity: 'high',
+                        type: FindingType.BinaryChange,
+                        name: `Custom Interpreter Path defined in ${vscode.workspace.asRelativePath(uri)}`,
+                        detail: `Setting "${currentPath}" points to a custom interpreter path: "${value}". This could be an attempt to execute arbitrary binaries.`,
+                        priority: 'high',
+                        file: uri.fsPath
                     })
                 }
                 if (typeof value === 'object') {
@@ -39,23 +39,4 @@ export class SettingsAnalyzer extends StaticAnalyzer {
 
         return findings
     }
-
-    async onChange(uri: vscode.Uri): Promise<Finding[]> {
-        const findings: Finding[] = []
-
-        const active = isActiveTab(uri)
-
-        if (!active) {
-            findings.push({
-                type: FindingType.SilentFileChange,
-                name: 'VSCode Settings Edited not by user ',
-                detail: 'settings.json was modified while not being the active editor tab — it may have been changed by an extension or automated process',
-                severity: 'high',
-                file: uri.fsPath
-            })
-        }
-
-        return findings
-    }
-
 }

@@ -36,41 +36,36 @@ interface TasksJson {
 export class TaskFileReader {
 
     /**
-     * Read .vscode/tasks.json from every workspace folder and return
-     * the merged list of tasks with presentation defaults applied.
+     * Parse a tasks.json file and return the list of tasks with
+     * presentation defaults applied.
+     *
+     * If `content` is provided it is used directly; otherwise the
+     * file is read from disk via the given `uri`.
      */
-    public async getTasks(): Promise<Task[]> {
-        const folders = vscode.workspace.workspaceFolders
-        if (!folders) return []
+    public async getTasks(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Task[]> {
+        if (content === undefined) {
+            try {
+                const bytes = await vscode.workspace.fs.readFile(uri)
+            } catch {
+                return []
+            }
+        }
 
+        const errors: jsonc.ParseError[] = []
+        const raw = jsonc.parse(new TextDecoder().decode(content), errors) as TasksJson | undefined
+        if (!raw?.tasks) return []
+
+        const defaultPresentation = raw.presentation
         const tasks: Task[] = []
 
-        for (const folder of folders) {
-            const tasksUri = vscode.Uri.joinPath(folder.uri, '.vscode', 'tasks.json')
-            let content: string
-            try {
-                const bytes = await vscode.workspace.fs.readFile(tasksUri)
-                content = Buffer.from(bytes).toString('utf-8')
-            } catch {
-                // No tasks.json in this folder – skip.
-                continue
-            }
-
-            const errors: jsonc.ParseError[] = []
-            const raw = jsonc.parse(content, errors) as TasksJson | undefined
-            if (!raw?.tasks) continue
-
-            const defaultPresentation = raw.presentation
-
-            for (const rawTask of raw.tasks) {
-                tasks.push({
-                    ...rawTask,
-                    presentation: {
-                        ...defaultPresentation,
-                        ...rawTask.presentation,
-                    },
-                })
-            }
+        for (const rawTask of raw.tasks) {
+            tasks.push({
+                ...rawTask,
+                presentation: {
+                    ...defaultPresentation,
+                    ...rawTask.presentation,
+                },
+            })
         }
 
         return tasks

@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
-import { Finding, FindingType } from '../types'
-import { isActiveTab } from '../utils'
-import { StaticAnalyzer } from './types'
+import { Finding } from '../types'
+import { StaticAnalyzer } from './staticAnalyzer'
 
 
 export class AgentsAnalyzer extends StaticAnalyzer {
@@ -18,22 +17,20 @@ export class AgentsAnalyzer extends StaticAnalyzer {
         return []
     }
 
-    async onChange(uri: vscode.Uri): Promise<Finding[]> {
-        const findings: Finding[] = []
-
-        const active = isActiveTab(uri)
-
-        if (!active) {
-            findings.push({
-                type: FindingType.SilentFileChange,
-                name: 'AI file Edited not by user',
-                detail: `The file ${uri.fsPath} was modified while not being the active editor tab — it may indicate an attack against AI agents`,
-                severity: 'low',
-                file: uri.fsPath
-            })
-        }
-
-        return findings
+    static isAgentFile(uri: vscode.Uri): boolean {
+        const relativePath = vscode.workspace.asRelativePath(uri, false)
+        return AgentsAnalyzer.AGENTS_FILE_NAMES.some(pattern => {
+            const regex = new RegExp(
+                '^' +
+                pattern
+                    .replace(/[.+^${}()|[\]\\]/g, '\\$&')  // escape regex specials (except * and ?)
+                    .replace(/\*\*/g, '{{GLOBSTAR}}')        // placeholder for **
+                    .replace(/\*/g, '[^/]*')                 // * matches anything except /
+                    .replace(/\?/g, '[^/]')                  // ? matches single char except /
+                    .replace(/\{\{GLOBSTAR\}\}/g, '.*')      // ** matches everything
+                + '$'
+            )
+            return regex.test(relativePath)
+        })
     }
-
 }

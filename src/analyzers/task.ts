@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import { Task, TaskFileReader } from '../taskFileReader'
 import { Finding, FindingType } from '../types'
-import { StaticAnalyzer } from './types'
+import { StaticAnalyzer } from './staticAnalyzer'
 
 export const SUSPICIOUS_COMMANDS = [
     /\bcurl\b/i,
@@ -29,32 +29,38 @@ export const SUSPICIOUS_COMMANDS = [
 export class TaskAnalyzer extends StaticAnalyzer {
 
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
-        return []
-    }
+        const taskReader = new TaskFileReader()
+        const tasks = await taskReader.getTasks(uri, content) //tasks.json files can be big, so we want to avoid reading them multiple times
 
-    async onChange(uri: vscode.Uri): Promise<Finding[]> {
-        return []
-    }
-
-    private analyzeTask(task: Task): Finding[] {
         const findings: Finding[] = []
+        for (const task of tasks) {
+            findings.push(...this.analyzeTask(task, uri))
+        }
+
+        return findings
+    }
+
+    private analyzeTask(task: Task, uri: vscode.Uri): Finding[] {
+        const findings: Finding[] = []
+
+        const taskName = task.label ?? task.command ?? 'unknown'
 
         if (this.isSuspiciousCommand(TaskFileReader.getFullCommand(task) ?? ''))
             findings.push({
                 type: FindingType.Task,
-                name: task.label ?? task.command ?? 'unknown',
-                detail: `Task executes potentially dangerous command: ${TaskFileReader.getFullCommand(task)}`,
-                severity: 'high',
-                file: ".vscode/tasks.json"
+                name: `Task '${taskName}' has a suspicious command`,
+                detail: `This task executes a command commonly used in malware techniques: ${TaskFileReader.getFullCommand(task)}`,
+                priority: 'high',
+                file: uri.fsPath
             })
 
         if (this.hidingPresentationScore(task) >= 3)
             findings.push({
                 type: FindingType.Task,
-                name: task.label ?? task.command ?? 'unknown',
-                detail: `Task tries to hide any presentation options (Low confidence finding)`,
-                severity: 'medium',
-                file: ".vscode/tasks.json"
+                name: `Task '${taskName}' tries to hide itself from the UI`,
+                detail: `This task attempts defines multiple settings to try to hide itself from the user, which may indicate malicious intent. Presentation options: ${JSON.stringify(task.presentation)}`,
+                priority: 'low',
+                file: uri.fsPath
             })
 
         return findings

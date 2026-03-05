@@ -1,6 +1,6 @@
 import { Finding } from './types'
 
-const severityConfig = {
+const priorityConfig = {
     high: { emoji: '🔴', label: 'HIGH', color: '#ef5350', bg: 'rgba(239,83,80,0.08)', border: 'rgba(239,83,80,0.25)' },
     medium: { emoji: '🟡', label: 'MEDIUM', color: '#fdd835', bg: 'rgba(253,216,53,0.08)', border: 'rgba(253,216,53,0.25)' },
     low: { emoji: '🟢', label: 'LOW', color: '#66bb6a', bg: 'rgba(102,187,106,0.08)', border: 'rgba(102,187,106,0.25)' },
@@ -14,7 +14,7 @@ const typeEmoji: Record<string, string> = {
 }
 
 const renderFinding = (f: Finding, index: number) => {
-    const sev = severityConfig[f.severity]
+    const sev = priorityConfig[f.priority]
     const icon = typeEmoji[f.type] ?? '🔍'
 
     return `
@@ -30,9 +30,9 @@ const renderFinding = (f: Finding, index: number) => {
 }
 
 export const generateHTMLReport = (findings: Finding[]) => {
-    const highCount = findings.filter(f => f.severity === 'high').length
-    const medCount = findings.filter(f => f.severity === 'medium').length
-    const lowCount = findings.filter(f => f.severity === 'low').length
+    const highCount = findings.filter(f => f.priority === 'high').length
+    const medCount = findings.filter(f => f.priority === 'medium').length
+    const lowCount = findings.filter(f => f.priority === 'low').length
 
     const summaryBadge = (emoji: string, count: number, color: string) =>
         `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.04);padding:4px 12px;border-radius:6px;font-size:0.95em;">
@@ -48,17 +48,17 @@ export const generateHTMLReport = (findings: Finding[]) => {
 
     const groupedFindings = () => {
         const sections: string[] = []
-        const severities = ['high', 'medium', 'low'] as const
+        const priorities = ['high', 'medium', 'low'] as const
 
-        for (const sev of severities) {
-            const items = findings.filter(f => f.severity === sev)
+        for (const sev of priorities) {
+            const items = findings.filter(f => f.priority === sev)
             if (items.length === 0) { continue }
 
-            const cfg = severityConfig[sev]
+            const cfg = priorityConfig[sev]
             sections.push(`
                 <div style="margin-top:28px;">
                     <h3 style="color:${cfg.color};font-size:1em;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-                        ${cfg.emoji} ${cfg.label} SEVERITY
+                        ${cfg.emoji} ${cfg.label} PRIORITY
                         <span style="font-size:0.8em;color:#757575;font-weight:400;">(${items.length} finding${items.length > 1 ? 's' : ''})</span>
                     </h3>
                     ${items.map((f, i) => renderFinding(f, i)).join('')}
