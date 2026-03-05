@@ -12,7 +12,8 @@ export class JsonFile extends StaticAnalyzer {
         const findings: Finding[] = []
         const data = content ?? await vscode.workspace.fs.readFile(uri)
 
-        const json = jsonc.parse(data.toString())
+        const text = new TextDecoder().decode(data)
+        const json = jsonc.parse(text)
         if (!json?.["$schema"]) return []
 
         const schema = json["$schema"] as string

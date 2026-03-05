@@ -11,7 +11,8 @@ export class LaunchAnalyzer extends StaticAnalyzer {
         if (!content)
             content = await vscode.workspace.fs.readFile(uri)
 
-        const jsonContent = jsonc.parse(content.toString())
+        const textContent = new TextDecoder().decode(content)
+        const jsonContent = jsonc.parse(textContent)
 
 
         for (const config of jsonContent.configurations as Configuration[] || []) {

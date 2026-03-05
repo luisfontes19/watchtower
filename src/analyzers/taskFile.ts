@@ -32,7 +32,8 @@ export class TaskAnalyzer extends StaticAnalyzer {
         if (!content)
             content = await vscode.workspace.fs.readFile(uri)
 
-        const jsonContent = jsonc.parse(content.toString()) as Record<string, unknown>
+        const textContent = new TextDecoder().decode(content)
+        const jsonContent = jsonc.parse(textContent) as Record<string, unknown>
 
         const tasks = jsonContent.tasks as Task[] || []
 

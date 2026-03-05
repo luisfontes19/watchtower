@@ -9,6 +9,18 @@ import { StaticAnalyzer } from './analyzers/staticAnalyzer'
 import { TaskAnalyzer } from './analyzers/taskFile'
 import { generateHTMLReport } from './report'
 import { Finding } from './types'
+import { isSensitiveFile } from './utils'
+
+
+export const SensitiveFiles = [
+    '.devcontainer/devcontainer.json',
+    '.vscode/settings.json',
+    '.vscode/tasks.json',
+    '.vscode/launch.json',
+    '**/*.md',
+    '**/*.json',
+    ...AgentsAnalyzer.AGENTS_FILE_NAMES
+]
 
 export class Shield {
     private static instance: Shield
@@ -21,6 +33,7 @@ export class Shield {
     private taskAnalyzer: TaskAnalyzer
     private settingsAnalyzer: SettingsAnalyzer
     private launchAnalyzer: LaunchAnalyzer
+
 
 
 
@@ -99,7 +112,9 @@ export class Shield {
     }
 
     public getSensitiveFileAnalyzers(uri: vscode.Uri): StaticAnalyzer[] {
-        const relativePath = vscode.workspace.asRelativePath(uri, false)
+        if (!isSensitiveFile(uri)) return []
+
+
         const path = uri.fsPath
 
         const analyzers: StaticAnalyzer[] = []
@@ -121,6 +136,10 @@ export class Shield {
 
         if (path.endsWith('.md') && AgentsAnalyzer.isAgentFile(uri))
             analyzers.push(this.agentsAnalyzer)
+
+        if (analyzers.length === 0) {
+            throw new Error(`File ${uri.fsPath} is marked as sensitive but no analyzer found. Check the file patterns in getSensitiveFileAnalyzers and ensure they match the patterns in SensitiveFiles.`)
+        }
 
         return analyzers
     }
