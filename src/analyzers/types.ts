@@ -1,28 +1,10 @@
 import * as vscode from 'vscode'
 import { Finding } from '../types'
 
-export interface JsonFileAnalyzerParams {
-    json: string | Object
-}
+export abstract class StaticAnalyzer {
+    abstract analyze(options?: any): Promise<Finding[]>
+    abstract onChange?(uri: vscode.Uri): Promise<Finding[]>
 
-export interface TaskAnalyzerParams {
-    //tasks: Task[]
-}
-
-export interface VscodeSettingsFileAnalyzerParams {
-
-}
-
-export interface VscodeAgentsFileAnalyzerParams {
-
-}
-
-export interface DevContainerFileAnalyzerParams {
-
-}
-
-export interface StaticAnalyzer {
-    analyze(options?: VscodeSettingsFileAnalyzerParams | JsonFileAnalyzerParams | TaskAnalyzerParams | DevContainerFileAnalyzerParams | VscodeAgentsFileAnalyzerParams): Promise<Finding[]>
-    onChange?(uri: vscode.Uri): Promise<Finding[]>
+    abstract checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]>
 }
 

@@ -31,11 +31,16 @@ export class Shield {
     }
 
     public async analyze() {
+        const taskAnalyzer = new TaskAnalyzer()
+        const settingsAnalyzer = new SettingsAnalyzer()
+        const devContainerAnalyzer = new DevContainerAnalyzer()
+        const jsonFile = new JsonFile()
+
         const promises = []
-        promises.push(TaskAnalyzer.analyze())
-        promises.push(SettingsAnalyzer.analyze())
-        promises.push(DevContainerAnalyzer.analyze())
-        promises.push(JsonFile.analyze())
+        promises.push(taskAnalyzer.analyze())
+        promises.push(settingsAnalyzer.analyze())
+        promises.push(devContainerAnalyzer.analyze())
+        promises.push(jsonFile.analyze())
 
         const results = await Promise.all(promises)
         const findings = results.flat()
@@ -97,20 +102,20 @@ export class Shield {
 
 
         if (document.uri.fsPath.endsWith('.vscode/settings.json'))
-            promises.push(SettingsAnalyzer.onChange(document.uri))
+            promises.push(new SettingsAnalyzer().onChange(document.uri))
 
         if (document.uri.fsPath.endsWith('.devcontainer/devcontainer.json'))
-            promises.push(DevContainerAnalyzer.onChange(document.uri))
+            promises.push(new DevContainerAnalyzer().onChange(document.uri))
 
         if (document.uri.fsPath.endsWith('.json'))
-            promises.push(JsonFile.checkFileContent(document.getText()))
+            promises.push(new JsonFile().onChange(document.uri))
 
         if (document.uri.fsPath.endsWith('.vscode/tasks.json'))
-            promises.push(TaskAnalyzer.analyze(document.uri)) // TODO: Change to a onCHange
+            promises.push(new TaskAnalyzer().analyze()) // TODO: Change to a onChange
 
 
         if (document.uri.fsPath.endsWith('.md'))
-            promises.push(AgentsAnalyzer.onChange(document.uri))
+            promises.push(new AgentsAnalyzer().onChange(document.uri))
 
 
 

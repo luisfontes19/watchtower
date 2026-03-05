@@ -2,14 +2,14 @@ import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { Finding, FindingType } from '../types'
 import { findFiles } from '../utils'
-import { JsonFileAnalyzerParams, StaticAnalyzer } from './types'
+import { StaticAnalyzer } from './types'
 
 const MAX_PARAM_LENGTH = 30
 const MAX_PARAM_COUNT = 10
 
-export class JsonFile {
+export class JsonFile extends StaticAnalyzer {
 
-    public static async analyze(params?: JsonFileAnalyzerParams): Promise<Finding[]> {
+    async analyze(): Promise<Finding[]> {
         const findings: Finding[] = []
 
         const jsonFiles = await findFiles('**/*.json')
@@ -18,8 +18,7 @@ export class JsonFile {
         const results = await Promise.all(
             jsonFiles.map(file =>
                 vscode.workspace.fs.readFile(file).then(content => {
-                    const contentStr = content.toString()
-                    return JsonFile.checkFileContent(contentStr)
+                    return this.checkFile(file, content)
                 })
             )
         )
@@ -29,20 +28,25 @@ export class JsonFile {
         return findings
     }
 
-    public static checkFileContent(content: string): Finding[] {
+    async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         const findings: Finding[] = []
+        const data = content ?? await vscode.workspace.fs.readFile(uri)
 
-        const json = jsonc.parse(content.toString())
+        const json = jsonc.parse(data.toString())
         if (!json?.["$schema"]) return []
 
         const schema = json["$schema"] as string
 
-        findings.push(...JsonFile.checkSchemaUrl(schema))
+        findings.push(...this.checkSchemaUrl(schema))
 
         return findings
     }
 
-    public static checkSchemaUrl(url: string): Finding[] {
+    async onChange(uri: vscode.Uri): Promise<Finding[]> {
+        return this.checkFile(uri)
+    }
+
+    checkSchemaUrl(url: string): Finding[] {
         const findings: Finding[] = []
         const uri = vscode.Uri.parse(url)
         const query = uri.query
@@ -86,5 +90,3 @@ export class JsonFile {
         return findings
     }
 }
-
-const _checkStatic: StaticAnalyzer = JsonFile

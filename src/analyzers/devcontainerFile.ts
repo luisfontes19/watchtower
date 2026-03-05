@@ -2,30 +2,30 @@ import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { Finding, FindingType } from '../types'
 import { findFiles, isActiveTab, WorkspaceFile } from '../utils'
-import { DevContainerFileAnalyzerParams, StaticAnalyzer } from './types'
+import { StaticAnalyzer } from './types'
 
-export class DevContainerAnalyzer {
+export class DevContainerAnalyzer extends StaticAnalyzer {
 
-    static async analyze(options?: DevContainerFileAnalyzerParams): Promise<Finding[]> {
+    async analyze(): Promise<Finding[]> {
         const findings: Finding[] = []
 
         for (const devContainer of await findFiles(WorkspaceFile.DevContainer)) {
-            findings.push(...await DevContainerAnalyzer.analyzeFile(devContainer))
+            findings.push(...await this.checkFile(devContainer))
         }
 
         return findings
     }
 
-    static async analyzeFile(uri: vscode.Uri): Promise<Finding[]> {
+    async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         const findings: Finding[] = []
-        const content = await vscode.workspace.fs.readFile(uri)
-        const json = jsonc.parse(content.toString()) as Record<string, unknown>
-        findings.push(...DevContainerAnalyzer.checkMcpServers(json))
+        const data = content ?? await vscode.workspace.fs.readFile(uri)
+        const json = jsonc.parse(data.toString()) as Record<string, unknown>
+        findings.push(...this.checkMcpServers(json))
 
         return findings
     }
 
-    static checkMcpServers(json: Record<string, unknown>): Finding[] {
+    checkMcpServers(json: Record<string, unknown>): Finding[] {
         const findings: Finding[] = []
         const servers = (((json?.customizations as Record<string, unknown>)?.vscode as Record<string, unknown>)?.mcp as Record<string, unknown>)?.servers as Record<string, unknown> | undefined
         for (const serverName of Object.keys(servers ?? {})) {
@@ -37,11 +37,9 @@ export class DevContainerAnalyzer {
             })
         }
         return findings
-
-
     }
 
-    static async onChange(uri: vscode.Uri): Promise<Finding[]> {
+    async onChange(uri: vscode.Uri): Promise<Finding[]> {
         const findings: Finding[] = []
 
         const active = isActiveTab(uri)
@@ -56,12 +54,8 @@ export class DevContainerAnalyzer {
             })
         }
 
-        findings.push(...await DevContainerAnalyzer.analyzeFile(uri))
-
+        findings.push(...await this.checkFile(uri))
 
         return findings
-
     }
 }
-
-const _checkStatic: StaticAnalyzer = DevContainerAnalyzer

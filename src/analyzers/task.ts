@@ -1,6 +1,7 @@
+import * as vscode from 'vscode'
 import { Task, TaskFileReader } from '../taskFileReader'
 import { Finding, FindingType } from '../types'
-import { StaticAnalyzer, TaskAnalyzerParams } from './types'
+import { StaticAnalyzer } from './types'
 
 export const SUSPICIOUS_COMMANDS = [
     /\bcurl\b/i,
@@ -25,26 +26,33 @@ export const SUSPICIOUS_COMMANDS = [
     /\bpwsh\b/i,
 ]
 
-export class TaskAnalyzer {
+export class TaskAnalyzer extends StaticAnalyzer {
 
-    public static async analyze(params?: TaskAnalyzerParams): Promise<Finding[]> {
+    async analyze(): Promise<Finding[]> {
         const taskFileReader = new TaskFileReader()
         const tasks = await taskFileReader.getTasks()
 
         const findings: Finding[] = []
 
         for (const task of tasks) {
-            findings.push(...TaskAnalyzer.analyzeTask(task))
+            findings.push(...this.analyzeTask(task))
         }
 
         return findings
     }
 
+    async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
+        return []
+    }
 
-    private static analyzeTask(task: Task): Finding[] {
+    async onChange(uri: vscode.Uri): Promise<Finding[]> {
+        return []
+    }
+
+    private analyzeTask(task: Task): Finding[] {
         const findings: Finding[] = []
 
-        if (TaskAnalyzer.isSuspiciousCommand(TaskFileReader.getFullCommand(task) ?? ''))
+        if (this.isSuspiciousCommand(TaskFileReader.getFullCommand(task) ?? ''))
             findings.push({
                 type: FindingType.Task,
                 name: task.label ?? task.command ?? 'unknown',
@@ -53,7 +61,7 @@ export class TaskAnalyzer {
                 file: ".vscode/tasks.json"
             })
 
-        if (TaskAnalyzer.hidingPresentationScore(task) >= 3)
+        if (this.hidingPresentationScore(task) >= 3)
             findings.push({
                 type: FindingType.Task,
                 name: task.label ?? task.command ?? 'unknown',
@@ -65,11 +73,11 @@ export class TaskAnalyzer {
         return findings
     }
 
-    private static isSuspiciousCommand(command: string): boolean {
+    private isSuspiciousCommand(command: string): boolean {
         return SUSPICIOUS_COMMANDS.some((regex) => regex.test(command))
     }
 
-    private static hidingPresentationScore(task: Task): number {
+    private hidingPresentationScore(task: Task): number {
         const opts = task.presentation
         let score = 0
 
@@ -84,5 +92,3 @@ export class TaskAnalyzer {
         return score
     }
 }
-
-const _checkStatic: StaticAnalyzer = TaskAnalyzer
