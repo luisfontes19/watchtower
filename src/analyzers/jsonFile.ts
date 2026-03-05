@@ -1,32 +1,12 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { Finding, FindingType } from '../types'
-import { findFiles } from '../utils'
 import { StaticAnalyzer } from './types'
 
 const MAX_PARAM_LENGTH = 30
 const MAX_PARAM_COUNT = 10
 
 export class JsonFile extends StaticAnalyzer {
-
-    async analyze(): Promise<Finding[]> {
-        const findings: Finding[] = []
-
-        const jsonFiles = await findFiles('**/*.json')
-        console.log("Found JSON files:", jsonFiles.map(f => f.fsPath))
-
-        const results = await Promise.all(
-            jsonFiles.map(file =>
-                vscode.workspace.fs.readFile(file).then(content => {
-                    return this.checkFile(file, content)
-                })
-            )
-        )
-
-        findings.push(...results.flat())
-
-        return findings
-    }
 
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         const findings: Finding[] = []

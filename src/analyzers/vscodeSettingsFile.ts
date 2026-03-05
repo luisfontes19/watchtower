@@ -1,7 +1,7 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { Finding, FindingType } from '../types'
-import { findFiles, isActiveTab, WorkspaceFile } from '../utils'
+import { isActiveTab } from '../utils'
 import { StaticAnalyzer } from './types'
 
 export class SettingsAnalyzer extends StaticAnalyzer {
@@ -9,16 +9,6 @@ export class SettingsAnalyzer extends StaticAnalyzer {
     // would be nice to detect changes to:
     //      chat.tools.autoApprove
     //      *.executablePath
-
-    async analyze(): Promise<Finding[]> {
-        const findings: Finding[] = []
-
-        for (const uri of await findFiles(WorkspaceFile.Settings)) {
-            findings.push(...await this.checkFile(uri))
-        }
-
-        return findings
-    }
 
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         const findings: Finding[] = []

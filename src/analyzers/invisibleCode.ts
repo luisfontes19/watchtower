@@ -10,10 +10,6 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
 
     public static readonly INVISIBLE_PATTERN = /[\u{E0000}-\u{E007F}]{5,}/u
 
-    async analyze(): Promise<Finding[]> {
-        return []
-    }
-
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         const findings: Finding[] = []
         const data = content ?? await vscode.workspace.fs.readFile(uri)

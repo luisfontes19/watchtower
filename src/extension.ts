@@ -14,9 +14,18 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Listeners
 	context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(shield.onWorkspaceTrusted.bind(shield)))
-	context.subscriptions.push(vscode.tasks.onDidStartTask(shield.onDidStartTask.bind(shield)))
-	context.subscriptions.push(vscode.workspace.onWillSaveTextDocument(shield.onWillSaveFile.bind(shield)))
-	context.subscriptions.push(vscode.workspace.onWillCreateFiles(shield.onWillCreateFiles.bind(shield)))
+	// context.subscriptions.push(vscode.tasks.onDidStartTask(shield.onDidStartTask.bind(shield)))
+	// context.subscriptions.push(vscode.workspace.onWillSaveTextDocument(shield.onWillSaveFile.bind(shield)))
+	// context.subscriptions.push(vscode.workspace.onWillCreateFiles(shield.onWillCreateFiles.bind(shield)))
+
+
+	const watcher = vscode.workspace.createFileSystemWatcher('**/*')
+	watcher.onDidCreate(shield.onFileCreated.bind(shield))
+	watcher.onDidChange(shield.onFileChanged.bind(shield))
+
+
+	context.subscriptions.push(watcher)
+
 	shield.analyze()
 
 }

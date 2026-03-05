@@ -28,19 +28,6 @@ export const SUSPICIOUS_COMMANDS = [
 
 export class TaskAnalyzer extends StaticAnalyzer {
 
-    async analyze(): Promise<Finding[]> {
-        const taskFileReader = new TaskFileReader()
-        const tasks = await taskFileReader.getTasks()
-
-        const findings: Finding[] = []
-
-        for (const task of tasks) {
-            findings.push(...this.analyzeTask(task))
-        }
-
-        return findings
-    }
-
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         return []
     }

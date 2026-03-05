@@ -1,20 +1,10 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { Finding, FindingType } from '../types'
-import { findFiles, isActiveTab, WorkspaceFile } from '../utils'
+import { isActiveTab } from '../utils'
 import { StaticAnalyzer } from './types'
 
 export class DevContainerAnalyzer extends StaticAnalyzer {
-
-    async analyze(): Promise<Finding[]> {
-        const findings: Finding[] = []
-
-        for (const devContainer of await findFiles(WorkspaceFile.DevContainer)) {
-            findings.push(...await this.checkFile(devContainer))
-        }
-
-        return findings
-    }
 
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         const findings: Finding[] = []

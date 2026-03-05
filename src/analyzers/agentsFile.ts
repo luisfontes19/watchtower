@@ -14,13 +14,6 @@ export class AgentsAnalyzer extends StaticAnalyzer {
         ".agents/**/SKILL.md"
     ]
 
-    async analyze(): Promise<Finding[]> {
-        //const agentFiles = await Promise.all(AgentsAnalyzer.AGENTS_FILE_NAMES.map(f => findFiles(f))).then(results => results.flat())
-        const findings: Finding[] = []
-
-        return findings
-    }
-
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         return []
     }
