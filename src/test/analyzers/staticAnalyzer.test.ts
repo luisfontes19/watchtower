@@ -13,7 +13,7 @@ class TestStaticAnalyzer extends StaticAnalyzer {
 
 suite('StaticAnalyzer', () => {
 
-    const fakeUri = vscode.Uri.file('/workspace/.vscode/settings.json')
+    const fakeUri = vscode.Uri.file('/.vscode/settings.json')
     let analyzer: TestStaticAnalyzer
 
     setup(() => {
@@ -31,9 +31,9 @@ suite('StaticAnalyzer', () => {
 
         test('returns boolean result for any URI', () => {
             const testUris = [
-                vscode.Uri.file('/workspace/test.ts'),
-                vscode.Uri.file('/workspace/.vscode/launch.json'),
-                vscode.Uri.file('/workspace/package.json')
+                vscode.Uri.file('/test.ts'),
+                vscode.Uri.file('/.vscode/launch.json'),
+                vscode.Uri.file('/package.json')
             ]
 
             for (const uri of testUris) {
@@ -68,7 +68,7 @@ suite('StaticAnalyzer', () => {
         })
 
         test('detects background edit of AI agent file with high priority', async () => {
-            const agentUri = vscode.Uri.file('/workspace/CLAUDE.md')
+            const agentUri = vscode.Uri.file('/CLAUDE.md')
             // Mock editedInBackground to return true
             analyzer.editedInBackground = () => true
 
@@ -84,7 +84,7 @@ suite('StaticAnalyzer', () => {
         })
 
         test('detects background edit of instruction file', async () => {
-            const instructionUri = vscode.Uri.file('/workspace/.github/copilot-instructions.md')
+            const instructionUri = vscode.Uri.file('/.github/copilot-instructions.md')
             // Mock editedInBackground to return true
             analyzer.editedInBackground = () => true
 
@@ -96,11 +96,12 @@ suite('StaticAnalyzer', () => {
         })
 
         test('detects background edit of agents directory file', async () => {
-            const agentsUri = vscode.Uri.file('/workspace/.agents/toolname/SKILL.md')
+            const agentsUri = vscode.Uri.file('/.agents/toolname/SKILL.md')
             // Mock editedInBackground to return true
             analyzer.editedInBackground = () => true
 
             const findings = await analyzer.sensitiveFileBackgroundEditCheck(agentsUri)
+
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].type, FindingType.SilentFileChange)
             assert.ok(findings[0].detail.includes('AI related file'))
@@ -109,10 +110,10 @@ suite('StaticAnalyzer', () => {
 
         test('handles various file types', async () => {
             const testFiles = [
-                '/workspace/package.json',
-                '/workspace/.vscode/tasks.json',
-                '/workspace/.devcontainer/devcontainer.json',
-                '/workspace/README.md'
+                '/package.json',
+                '/.vscode/tasks.json',
+                '/.devcontainer/devcontainer.json',
+                '/README.md'
             ]
 
             // Mock editedInBackground to return true

@@ -25,12 +25,9 @@ suite('AgentsAnalyzer', () => {
             assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('AGENTS.md')), true)
         })
 
-        test('prefixed AGENTS.md (MY-AGENTS.md)', () => {
-            assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('MY-AGENTS.md')), true)
-        })
 
-        test('.agents/SKILL.md (direct child - ** requires at least one segment)', () => {
-            assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('.agents/SKILL.md')), false)
+        test('.agents/SKILL.md (direct child', () => {
+            assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('.agents/SKILL.md')), true)
         })
 
         test('.agents/toolname/SKILL.md', () => {
@@ -48,6 +45,11 @@ suite('AgentsAnalyzer', () => {
             assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('sub/CLAUDE.md')), false)
         })
 
+        test('prefixed AGENTS.md (MY-AGENTS.md)', () => {
+            assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('MY-AGENTS.md')), false)
+        })
+
+
         test('claude.md lowercase', () => {
             assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('claude.md')), false)
         })
@@ -62,10 +64,6 @@ suite('AgentsAnalyzer', () => {
 
         test('.github/instructions/foo.md (missing .instructions prefix)', () => {
             assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('.github/instructions/foo.md')), false)
-        })
-
-        test('AGENTS.md in subdirectory (single * should not cross /)', () => {
-            assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('sub/AGENTS.md')), false)
         })
 
         test('.agents/toolname/OTHER.md', () => {
@@ -90,7 +88,7 @@ suite('AgentsAnalyzer', () => {
         test('contains expected patterns', () => {
             assert.ok(AgentsAnalyzer.AGENTS_FILE_NAMES.includes('CLAUDE.md'))
             assert.ok(AgentsAnalyzer.AGENTS_FILE_NAMES.includes('.github/copilot-instructions.md'))
-            assert.ok(AgentsAnalyzer.AGENTS_FILE_NAMES.includes('*AGENTS.md'))
+            assert.ok(AgentsAnalyzer.AGENTS_FILE_NAMES.includes('**/AGENTS.md'))
         })
 
         test('is not empty', () => {

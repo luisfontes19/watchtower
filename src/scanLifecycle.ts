@@ -1,5 +1,5 @@
-import * as path from 'path'
 import * as fs from 'fs'
+import * as path from 'path'
 import * as vscode from 'vscode'
 import { generateHTMLReport, generateJSONReport } from './report'
 import { Finding } from './types'
@@ -317,7 +317,7 @@ export class ScanLifecycle {
             }
 
             const fileUri = await vscode.window.showSaveDialog(saveDialogOptions)
-            
+
             if (!fileUri) {
                 // User canceled the dialog
                 return
@@ -325,7 +325,7 @@ export class ScanLifecycle {
 
             const jsonData = generateJSONReport(findings, partial)
             await fs.promises.writeFile(fileUri.fsPath, jsonData, 'utf8')
-            
+
             vscode.window.showInformationMessage(
                 `Report exported successfully to ${path.basename(fileUri.fsPath)}`
             )
