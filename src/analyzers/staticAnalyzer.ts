@@ -6,7 +6,7 @@ export abstract class StaticAnalyzer {
     async sensitiveFileBackgroundEditCheck(uri: vscode.Uri): Promise<Finding[]> {
         const findings: Finding[] = []
 
-        if (!this.editedInBackground(uri)) {
+        if (this.editedInBackground(uri)) {
 
             let detail = `A file that is deemed sensitive was modified while not being the active editor tab, this indicates that it was edited by some kind of background process, since it's consider a sensitive file it is recommended to investigate this change to make sure it was legitimate`
             let priority = "low"
@@ -24,7 +24,6 @@ export abstract class StaticAnalyzer {
             })
 
         }
-
         return findings
 
     }

@@ -59,9 +59,10 @@ export class Shield {
         })
     }
 
-    private displayFindingsPage(findings: Finding[]) {
-        const panel = vscode.window.createWebviewPanel('findingsView', 'VSCode Shield Findings', vscode.ViewColumn.One, { enableScripts: true })
-        panel.webview.html = generateHTMLReport(findings)
+    private displayFindingsPage(findings: Finding[], partial: boolean = false) {
+        const title = partial ? 'VSCode Shield — Partial Scan' : 'VSCode Shield Findings'
+        const panel = vscode.window.createWebviewPanel('findingsView', title, vscode.ViewColumn.One, { enableScripts: true })
+        panel.webview.html = generateHTMLReport(findings, partial)
     }
 
 
@@ -72,15 +73,16 @@ export class Shield {
 
     public async onFileCreated(uri: vscode.Uri) {
         const findings = await this.analyzeFile(uri)
-        this.showAlerts(findings)
+        await this.showAlerts(findings)
     }
 
     public async onFileChanged(uri: vscode.Uri) {
+
         const findings = await this.analyzeFile(uri)
-        this.showAlerts(findings)
+        await this.showAlerts(findings)
     }
 
-    public async analyzeFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
+    public async analyzeFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>, fileEdited: boolean = false): Promise<Finding[]> {
         const promises = []
 
         // Ensure we only read file once, when running on multiple analyzers, as vscode.workspace.fs.readFile can be expensive on large files or remote workspaces
@@ -93,33 +95,34 @@ export class Shield {
 
         if (uri.fsPath.endsWith('.vscode/settings.json')) {
             const analyzer = new SettingsAnalyzer()
-            promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
+
+            if (fileEdited) promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
             promises.push(analyzer.checkFile(uri, await ensureFileContent()))
         }
 
 
         if (uri.fsPath.endsWith('.devcontainer/devcontainer.json')) {
             const analyzer = new DevContainerAnalyzer()
-            promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
+            if (fileEdited) promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
             promises.push(analyzer.checkFile(uri, await ensureFileContent()))
         }
 
         if (uri.fsPath.endsWith('.json')) {
             const analyzer = new JsonFile()
-            promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
+            if (fileEdited) promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
             promises.push(analyzer.checkFile(uri, await ensureFileContent()))
         }
 
         if (uri.fsPath.endsWith('.vscode/tasks.json')) {
             const analyzer = new TaskAnalyzer()
-            promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
+            if (fileEdited) promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
             promises.push(analyzer.checkFile(uri, await ensureFileContent()))
         }
 
 
         if (uri.fsPath.endsWith('.md')) {
             const analyzer = new AgentsAnalyzer()
-            if (AgentsAnalyzer.isAgentFile(uri))
+            if (AgentsAnalyzer.isAgentFile(uri) && fileEdited)
                 promises.push(Promise.resolve(analyzer.sensitiveFileBackgroundEditCheck(uri)))
 
             promises.push(analyzer.checkFile(uri, await ensureFileContent()))
@@ -133,17 +136,48 @@ export class Shield {
 
     }
 
-    public async processFileChange(document: vscode.TextDocument) {
-        const findings = await this.analyzeFile(document.uri, new TextEncoder().encode(document.getText()))
 
+    public async showAlerts(findings: Finding[]) {
         if (findings.length === 0) return
-        this.showAlerts(findings)
 
-    }
+        const highCount = findings.filter(f => f.priority === 'high').length
+        const medCount = findings.filter(f => f.priority === 'medium').length
+        const lowCount = findings.filter(f => f.priority === 'low').length
 
-    public showAlerts(findings: Finding[]) {
-        for (const finding of findings)
-            vscode.window.showErrorMessage(`Potential issue detected in ${finding.file}: ${finding.detail}`)
+        const counts: string[] = []
+        if (highCount) counts.push(`🔴 ${highCount} high`)
+        if (medCount) counts.push(`🟠 ${medCount} medium`)
+        if (lowCount) counts.push(`🟡 ${lowCount} low`)
+
+        // Group findings by type for a concise summary
+        const byType = new Map<string, Finding[]>()
+        for (const f of findings) {
+            const group = byType.get(f.type) ?? []
+            group.push(f)
+            byType.set(f.type, group)
+        }
+
+        const summary = Array.from(byType.entries()).map(([type, items]) => {
+            const files = [...new Set(items.map(f => f.file).filter(Boolean))]
+            const fileList = files.length ? `: ${files.join(', ')}` : ''
+            return `• ${type} (${items.length})${fileList}`
+        }).join('\n')
+
+        const message = [
+            `⚡ VSCode Shield — Partial Scan`,
+            `Detected ${findings.length} issue${findings.length > 1 ? 's' : ''} in recently changed files`,
+            `Priority: ${counts.join(' | ')}`,
+            '',
+            summary,
+        ].join('\n')
+
+        const action = await vscode.window.showErrorMessage(message, 'Show Report', '🔍 Run Full Scan')
+
+        if (action === 'Show Report') {
+            this.displayFindingsPage(findings, true)
+        } else if (action === '🔍 Run Full Scan') {
+            this.analyze()
+        }
     }
 
 

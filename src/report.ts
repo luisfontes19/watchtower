@@ -2,8 +2,8 @@ import { Finding } from './types'
 
 const priorityConfig = {
     high: { emoji: '🔴', label: 'HIGH', color: '#ef5350', bg: 'rgba(239,83,80,0.08)', border: 'rgba(239,83,80,0.25)' },
-    medium: { emoji: '🟡', label: 'MEDIUM', color: '#fdd835', bg: 'rgba(253,216,53,0.08)', border: 'rgba(253,216,53,0.25)' },
-    low: { emoji: '🟢', label: 'LOW', color: '#66bb6a', bg: 'rgba(102,187,106,0.08)', border: 'rgba(102,187,106,0.25)' },
+    medium: { emoji: '🟠', label: 'MEDIUM', color: '#ffa726', bg: 'rgba(255,167,38,0.08)', border: 'rgba(255,167,38,0.25)' },
+    low: { emoji: '🟡', label: 'LOW', color: '#fdd835', bg: 'rgba(253,216,53,0.08)', border: 'rgba(253,216,53,0.25)' },
 } as const
 
 const typeEmoji: Record<string, string> = {
@@ -29,7 +29,7 @@ const renderFinding = (f: Finding, index: number) => {
         </div>`
 }
 
-export const generateHTMLReport = (findings: Finding[]) => {
+export const generateHTMLReport = (findings: Finding[], partial: boolean = false) => {
     const highCount = findings.filter(f => f.priority === 'high').length
     const medCount = findings.filter(f => f.priority === 'medium').length
     const lowCount = findings.filter(f => f.priority === 'low').length
@@ -94,17 +94,29 @@ export const generateHTMLReport = (findings: Finding[]) => {
         <h1 style="margin:0 0 4px;font-size:1.6em;color:#42a5f5;">
             🛡️ VSCode Shield Report
         </h1>
+        ${partial
+            ? `<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.3);border-radius:6px;padding:6px 14px;margin-bottom:12px;font-size:0.88em;">
+                    ⚡ <span style="color:#ffa726;"><strong>Partial Scan</strong> — Only recently changed files were analyzed.</span>
+                </div>`
+            : ''}
         <p style="margin:0 0 16px;color:#757575;font-size:0.92em;">
-            Workspace security scan completed — ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            ${partial ? 'Partial scan' : 'Full workspace scan'} completed — ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
             ${summaryBadge('🔴', highCount, '#ef5350')}
-            ${summaryBadge('🟡', medCount, '#fdd835')}
-            ${summaryBadge('🟢', lowCount, '#66bb6a')}
+            ${summaryBadge('🟠', medCount, '#ffa726')}
+            ${summaryBadge('🟡', lowCount, '#fdd835')}
             <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.04);padding:4px 12px;border-radius:6px;font-size:0.95em;">
                 📊 <strong style="color:#90caf9">${findings.length}</strong> <span style="color:#757575">total</span>
             </span>
         </div>
+    </div>
+    <div style="background:rgba(66,165,245,0.06);border:1px solid rgba(66,165,245,0.15);border-radius:8px;padding:16px 20px;margin-bottom:8px;">
+        <p style="margin:0;color:#90caf9;font-size:0.92em;line-height:1.6;">
+            🔎 <strong>What is this?</strong> — VSCode Shield scans your workspace for potential attack vectors that could compromise your development environment.
+            This includes suspicious VS Code tasks, malicious JSON schema references, hidden unicode characters, unauthorized MCP servers, and silent background file modifications.
+            These are common techniques used in <strong>supply chain attacks</strong> and <strong>IDE-targeted exploits</strong> to execute arbitrary code, exfiltrate data, or tamper with your project.
+        </p>
     </div>
     <hr/>
     ${findingsHtml}

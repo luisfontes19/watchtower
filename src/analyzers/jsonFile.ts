@@ -35,8 +35,8 @@ export class JsonFile extends StaticAnalyzer {
         if (entries.length > MAX_PARAM_COUNT) {
             findings.push({
                 type: FindingType.JsonSchema,
-                name: `Potential data exfiltration via json $schema in ${url} (Too many query params)`,
-                detail: `Schema URL contains ${entries.length} query parameters. A high number of query parameters may indicate potential data exfiltration`,
+                name: `Potential data exfiltration via json $schema in ${fileUri} (Too many query params)`,
+                detail: `Schema URL (${url}) contains ${entries.length} query parameters. A high number of query parameters may indicate potential data exfiltration`,
                 priority: 'medium',
                 file: fileUri.fsPath
             })
@@ -46,8 +46,8 @@ export class JsonFile extends StaticAnalyzer {
             if (name.length > MAX_PARAM_LENGTH) {
                 findings.push({
                     type: FindingType.JsonSchema,
-                    name: `Potential data exfiltration via json $schema in ${url} (Big query param name)`,
-                    detail: `Schema URL query parameter name "${name}" is ${name.length} chars. It seems too big, which may indicate data exfiltration (max ${MAX_PARAM_LENGTH})`,
+                    name: `Potential data exfiltration via json $schema in ${fileUri} (Big query param name)`,
+                    detail: `Schema URL query parameter name "${name}" is ${name.length} chars. It seems too big, which may indicate data exfiltration`,
                     priority: 'medium',
                     file: fileUri.fsPath
                 })
@@ -55,8 +55,8 @@ export class JsonFile extends StaticAnalyzer {
             if (value.length > MAX_PARAM_LENGTH) {
                 findings.push({
                     type: FindingType.JsonSchema,
-                    name: `Potential data exfiltration via json $schema in ${url} (Big query param value)`,
-                    detail: `Schema URL query parameter value "${value}" is ${value.length} chars. It seems too big, which may indicate data exfiltration (max ${MAX_PARAM_LENGTH})`,
+                    name: `Potential data exfiltration via json $schema in ${fileUri} (Big query param value)`,
+                    detail: `Schema URL query parameter value "${value}" is ${value.length} chars. It seems too big, which may indicate data exfiltration`,
                     priority: 'medium',
                     file: fileUri.fsPath
                 })
