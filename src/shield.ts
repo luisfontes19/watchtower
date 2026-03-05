@@ -60,7 +60,157 @@ export class Shield {
         return Shield.instance
     }
 
-    public async analyze() {
+    private isProjectTrusted(): boolean {
+        return this.config.get<boolean>('projectTrusted', false)
+    }
+
+    private async setProjectTrusted(trusted: boolean): Promise<void> {
+        await this.config.update('projectTrusted', trusted, vscode.ConfigurationTarget.Workspace)
+    }
+
+    private async showTrustDialog(findings: Finding[]): Promise<void> {
+        if (this.isProjectTrusted()) {
+            return // Already trusted, no need to show dialog
+        }
+
+        const message = findings.length > 0
+            ? `VSCode Shield found ${findings.length} security issue${findings.length > 1 ? 's' : ''} in this project. Do you want to trust this project and skip automatic scans in the future?`
+            : 'VSCode Shield scan completed with no issues found. Do you want to trust this project and skip automatic scans in the future?'
+
+        const options = ['Trust Project', 'Keep Scanning', 'Show Report']
+        const choice = await vscode.window.showInformationMessage(message, ...options)
+
+        switch (choice) {
+            case 'Trust Project':
+                await this.setProjectTrusted(true)
+                vscode.window.showInformationMessage('Project trusted. Automatic scans are disabled. You can still run manual scans using the "Shield: Analyze Workspace" command.')
+                break
+            case 'Show Report':
+                this.displayFindingsPage(findings)
+                break
+            // 'Keep Scanning' requires no action
+        }
+    }
+
+    public async untrustProject(): Promise<void> {
+        if (!this.isProjectTrusted()) {
+            vscode.window.showInformationMessage('Project is not currently trusted.')
+            return
+        }
+
+        const choice = await vscode.window.showWarningMessage(
+            'Are you sure you want to untrust this project? Automatic security scans will resume.',
+            'Yes, Untrust',
+            'Cancel'
+        )
+
+        if (choice === 'Yes, Untrust') {
+            await this.setProjectTrusted(false)
+            vscode.window.showInformationMessage('Project untrusted. Automatic scans will now run when files change.')
+        }
+    }
+
+    public async checkTrustStatus(): Promise<void> {
+        const isTrusted = this.isProjectTrusted()
+        const status = isTrusted ? 'trusted' : 'not trusted'
+        const message = `This project is currently ${status}.`
+
+        if (isTrusted) {
+            const choice = await vscode.window.showInformationMessage(
+                `${message} Automatic scans are disabled.`,
+                'Run Manual Scan',
+                'Untrust Project'
+            )
+
+            if (choice === 'Run Manual Scan') {
+                this.analyze(true)
+            } else if (choice === 'Untrust Project') {
+                this.untrustProject()
+            }
+        } else {
+            vscode.window.showInformationMessage(`${message} Automatic scans are enabled.`)
+        }
+    }
+
+    private isProjectTrusted(): boolean {
+        return this.config.get<boolean>('projectTrusted', false)
+    }
+
+    private async setProjectTrusted(trusted: boolean): Promise<void> {
+        await this.config.update('projectTrusted', trusted, vscode.ConfigurationTarget.Workspace)
+    }
+
+    public async showTrustDialog(findings: Finding[]): Promise<void> {
+        if (this.isProjectTrusted()) {
+            return // Already trusted, no need to show dialog
+        }
+
+        const message = findings.length > 0
+            ? `VSCode Shield found ${findings.length} security issue${findings.length > 1 ? 's' : ''} in this project. Do you want to trust this project and skip automatic scans in the future?`
+            : 'VSCode Shield scan completed with no issues found. Do you want to trust this project and skip automatic scans in the future?'
+
+        const options = ['Trust Project', 'Keep Scanning', 'Show Report']
+        const choice = await vscode.window.showInformationMessage(message, ...options)
+
+        switch (choice) {
+            case 'Trust Project':
+                await this.setProjectTrusted(true)
+                vscode.window.showInformationMessage('Project trusted. Automatic scans are disabled. You can still run manual scans using the "Shield: Analyze Workspace" command.')
+                break
+            case 'Show Report':
+                this.displayFindingsPage(findings)
+                break
+            // 'Keep Scanning' requires no action
+        }
+    }
+
+    public async untrustProject(): Promise<void> {
+        if (!this.isProjectTrusted()) {
+            vscode.window.showInformationMessage('Project is not currently trusted.')
+            return
+        }
+
+        const choice = await vscode.window.showWarningMessage(
+            'Are you sure you want to untrust this project? Automatic security scans will resume.',
+            'Yes, Untrust',
+            'Cancel'
+        )
+
+        if (choice === 'Yes, Untrust') {
+            await this.setProjectTrusted(false)
+            vscode.window.showInformationMessage('Project untrusted. Automatic scans will now run when files change.')
+        }
+    }
+
+    public async checkTrustStatus(): Promise<void> {
+        const isTrusted = this.isProjectTrusted()
+        const status = isTrusted ? 'trusted' : 'not trusted'
+        const message = `This project is currently ${status}.`
+
+        if (isTrusted) {
+            const choice = await vscode.window.showInformationMessage(
+                `${message} Automatic scans are disabled.`,
+                'Run Manual Scan',
+                'Untrust Project'
+            )
+
+            if (choice === 'Run Manual Scan') {
+                this.analyze(true)
+            } else if (choice === 'Untrust Project') {
+                this.untrustProject()
+            }
+        } else {
+            vscode.window.showInformationMessage(`${message} Automatic scans are enabled.`)
+        }
+    }
+
+    public async analyze(isManualScan: boolean = false): Promise<Finding[]> {
+        // Check if project is trusted and this is not a manual scan
+        if (!isManualScan && this.isProjectTrusted()) {
+            console.log('Project is trusted, skipping automatic scan')
+            return []
+        }
+
         return vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: 'VSCode Shield', cancellable: true }, async (progress, token) => {
             const findings: Finding[] = []
 
@@ -83,7 +233,14 @@ export class Shield {
                 findings.push(...fileFindings)
             }
 
+            // Show findings page immediately
             this.displayFindingsPage(findings)
+
+            // Show trust dialog after scan completion (only for manual scans or first-time automatic scans)
+            if (isManualScan || !this.isProjectTrusted()) {
+                await this.showTrustDialog(findings)
+            }
+
             return findings
         })
     }
@@ -101,11 +258,20 @@ export class Shield {
     }
 
     public async onFileCreated(uri: vscode.Uri) {
+        // Skip automatic scans if project is trusted
+        if (this.isProjectTrusted()) {
+            return
+        }
+
         const findings = await this.analyzeFile(uri, undefined, true)
         await this.showAlerts(findings)
     }
 
     public async onFileChanged(uri: vscode.Uri) {
+        // Skip automatic scans if project is trusted
+        if (this.isProjectTrusted()) {
+            return
+        }
 
         const findings = await this.analyzeFile(uri, undefined, true)
         await this.showAlerts(findings)
@@ -228,7 +394,8 @@ export class Shield {
         if (action === 'Show Report') {
             this.displayFindingsPage(findings, true)
         } else if (action === '🔍 Run Full Scan') {
-            this.analyze()
+            // Run full scan as manual scan to bypass trust check
+            this.analyze(true)
         }
     }
 

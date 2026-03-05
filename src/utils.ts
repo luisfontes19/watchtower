@@ -1,6 +1,6 @@
 import { minimatch } from 'minimatch'
 import * as vscode from 'vscode'
-import { SensitiveFiles } from './shield'
+import { SensitiveFiles } from './watchtower'
 
 
 export const isActiveTab = (uri: vscode.Uri) => vscode.window.activeTextEditor?.document.uri.fsPath === uri.fsPath

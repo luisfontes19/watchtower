@@ -1,6 +1,6 @@
 {
-  "name": "vscode-shield",
-  "displayName": "VSCode Shiwld",
+  "name": "watchtower",
+  "displayName": "Watchtower",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -21,17 +21,40 @@
   "contributes": {
     "commands": [
       {
-        "command": "vscode-shield.analyze",
-        "title": "Shield: Analyze Workspace"
+        "command": "watchtower.analyze",
+        "title": "Watchtower: Analyze Workspace"
+      },
+      {
+        "command": "watchtower.resetAcknowledgement",
+        "title": "Watchtower: Reset Project Acknowledgement"
+      },
+      {
+        "command": "watchtower.enableProtections",
+        "title": "Watchtower: Enable Protections"
+      },
+      {
+        "command": "watchtower.disableProtections",
+        "title": "Watchtower: Disable Protections"
+      },
+      {
+        "command": "watchtower.checkStatus",
+        "title": "Watchtower: Check Protection Status"
       }
     ],
     "configuration": {
-      "title": "VS Code Shield",
+      "title": "Watchtower",
       "properties": {
-        "vscode-shield.test": {
-          "type": "string",
-          "default": "default value",
-          "description": "A test setting for my security extension."
+        "watchtower.projectAcknowledged": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Whether the user has acknowledged the security scan results for this project."
+        },
+        "watchtower.protectionsDisabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Whether all security protections (scans and runtime monitoring) are disabled for this project."
         }
       }
     }
