@@ -1,7 +1,7 @@
 {
   "name": "watchtower",
-  "displayName": "Watchtower",
-  "description": "",
+  "displayName": "Watchtower - VSCode Security Scanner",
+  "description": "Protect your development environment from malicious configurations and hidden threats. Scans for invisible code, suspicious tasks, dangerous settings, and compromised configurations.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.109.0"
@@ -9,6 +9,35 @@
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "security",
+    "scanner",
+    "malware",
+    "protection",
+    "invisible code",
+    "configuration security",
+    "workspace security",
+    "threat detection",
+    "vscode security",
+    "devcontainer",
+    "agents",
+    "ai",
+    "vibecoding",
+    "vibe",
+    "supply chain"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": {
+    "url": ""
+  },
+  "homepage": "",
+  "author": {
+    "name": "Luis Fontes"
+  },
+  "license": "MIT",
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": true
@@ -19,21 +48,31 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Watchtower",
+      "properties": {
+        "watchtower.enableStartupScans": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic security scans when opening workspaces"
+        }
+      }
+    },
     "commands": [
       {
         "command": "watchtower.scan",
         "title": "Watchtower: Scan Workspace"
       },
       {
-        "command": "watchtower.enableStartupScan",
+        "command": "watchtower.enableProjectStartupScan",
         "title": "Watchtower: Enable Project Startup Scan"
       },
       {
-        "command": "watchtower.disableStartupScan",
+        "command": "watchtower.disableProjectStartupScan",
         "title": "Watchtower: Disable Project Startup Scan"
       },
       {
-        "command": "watchtower.enableBackgroundProtections",
+        "command": "watchtower.enableProjectBackgroundProtections",
         "title": "Watchtower: Enable Project Background Protections"
       },
       {

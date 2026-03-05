@@ -1,71 +1,158 @@
-# VSCode Watchtower
+# 🛡️ Watchtower - VSCode Security Scanner
 
-This is the README for your extension "Watchtower". After writing up a brief description, we recommend including the following sections.
+**Protect your development environment from malicious configurations and hidden threats.**
 
-## Features
+Watchtower is a comprehensive security extension that scans your VSCode workspace for potential security risks, malicious configurations, and hidden code that could compromise your development environment.
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+## 🔒 Why You Need Watchtower
 
-For example if there is an image subfolder under your extension project workspace:
+In today's development landscape, malicious actors are increasingly targeting developer environments and IDEs to compromise systems and steal sensitive data. Watchtower protects against several well-documented attack vectors:
 
-\!\[feature X\]\(images/feature-x.png\)
+### 🎯 **Real-World Threats & Attack Techniques**
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+**[Invisible Unicode Attacks](https://www.aikido.dev/blog/the-return-of-the-invisible-threat-hidden-pua-unicode-hits-github-repositorties)**
 
-## Requirements
+- Malicious code hidden using Unicode steganography that's invisible to the human eye
+- Attackers inject harmful commands using Unicode tag characters while the visible code appears legitimate
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+**[Contagious Interview & Supply Chain Attacks](https://opensourcemalware.com/blog/contagious-code-fake-font)**
 
-## Extension Settings
+- North Korean APT groups targeting developers through fake job interviews and malicious packages
+- Compromised dependencies that execute malicious code during development
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+**[Malicious VSCode Tasks](https://www.threatlocker.com/blog/malicious-vs-code-tasks-json-abuse-enables-multi-stage-infostealer-deployment)**
 
-For example:
+- `.vscode/tasks.json` files weaponized to execute arbitrary commands during project builds
+- Multi-stage infostealers deployed through seemingly innocent development tasks
 
-This extension contributes the following settings:
+**[AI Skills Exploitation](https://opensourcemalware.com/blog/malicious-clawhub-skills-hide-in-plain-sight)**
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+- Malicious AI coding assistants and skills that compromise developer environments
+- Auto-approval settings that bypass security reviews for AI-generated code
 
-## Known Issues
+**[IDEsaster Techniques](https://maccarita.com/posts/idesaster/)**
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- Comprehensive IDE-based attack methods targeting developer workflows
+- Configuration poisoning that persists across multiple projects
 
-## Release Notes
+Watchtower automatically detects these threats and provides detailed security reports to keep you safe.
 
-Users appreciate release notes as you update your extension.
+## ✨ Features
 
-### 1.0.0
+![Watchtower Report](./data/features1.jpg)
 
-Initial release of ...
+### 🔍 **Invisible Code Detection**
 
-### 1.0.1
+- Detects hidden Unicode tag characters (`U+E0000-U+E007F`) used to hide malicious code
+- Protects against steganographic attacks where code is invisible to the human eye
 
-Fixed issue #.
+### 📋 **Malicious Task Scanner**
 
-### 1.1.0
+Scans `.vscode/tasks.json` for dangerous commands including:
 
-Added features X, Y, and Z.
+- Network requests (`curl`, `wget`, `Invoke-WebRequest`)
+- Shell execution (`bash`, `powershell`, `cmd`)
+- Encoding utilities (`base64`, `certutil`)
+- Suspicious interpreters and download tools
+
+### ⚙️ **Configuration Security Analysis**
+
+- **Settings Scanner**: Detects custom interpreter paths that could execute malicious binaries
+- **Launch Configuration**: Analyzes launch.json for suspicious pre-launch tasks
+- **Dev Container Review**: Examines container configurations for security risks
+- **AI Agent Monitoring**: Watches for dangerous auto-approval settings
+
+### 🚨 **Real-time Scanning**
+
+- **Monitoring** of file changes in the background, for sensitive configurations
+- **Startup scans** when opening new projects
+
+![Real Time](./data/features2.jpg)
+
+### 📊 **Detailed Security Reports**
+
+- HTML and JSON report generation
+- Risk categorization (High/Medium/Low)
+- File-specific findings with detailed explanations
+- Actionable recommendations for remediation
+
+## 🚀 Getting Started & Best Practices
+
+### Initial Setup
+
+1. **Install Watchtower** from the VS Code Marketplace
+2. **Open workspaces in Restricted Mode** - Always open new or untrusted projects in VSCode's Restricted Mode first
+3. **Automatic scanning** - Watchtower will automatically scan your workspace when you first open it
+4. **Review findings** - Check the security report and address any high-priority issues before trusting the workspace
+5. **Enable trust carefully** - Only trust the workspace after verifying it's safe
+
+### Working with VSCode Workspace Trust (Native vscode feature)
+
+**🔒 Important Security Practice**: Always open untrusted projects in **Restricted Mode** first. Watchtower is a reactive security tool - it detects threats but cannot prevent them (at least for now) from executing if the workspace is already trusted.
+
+**Opening Projects Safely:**
+
+- When VSCode asks "Do you trust this folder?", choose **"No, I don't trust the authors"**
+- Let Watchtower scan the project first
+- Review all findings before clicking "Trust Folder"
+
+**Managing Workspace Trust:**
+
+- **View trusted folders**: Command Palette → `Workspaces: Manage Workspace Trust`
+- **Remove trust**: Use the workspace trust manager to revoke trust from suspicious folders
+- **Reset all trust**: If you've trusted too many folders, you can reset trust settings through VSCode preferences
+
+### Background Protection
+
+Once enabled, Watchtower continuously monitors for:
+
+- Changes to sensitive configuration files
+- New suspicious tasks or launch configurations
+- Addition of invisible code
+
+### Manual Scanning
+
+Need to run a fresh scan? Use the Command Palette (`Ctrl+Shift+P`) and run **`Watchtower: Scan Workspace`** anytime.
+
+## 🎯 What Watchtower Scans
+
+| File Type | Security Checks |
+|-----------|----------------|
+| `.vscode/tasks.json` | Malicious commands, network requests, shell execution |
+| `.vscode/settings.json` | Custom interpreter paths, AI auto-approval, dangerous settings |
+| `.vscode/launch.json` | Suspicious launch configurations and pre-launch tasks |
+| `.devcontainer/devcontainer.json` | Container security configurations |
+| `**/*.json` | JSON schema validation and suspicious patterns |
+| AI related files | Markdown instruction files |
+
+## � When to Use Watchtower
+
+- **Before trusting any repository** - Scan unknown projects before working on them
+- **In corporate environments** - Ensure code repositories meet security standards
+- **Open source contributions** - Verify the safety of repositories you contribute to
+- **Team collaboration** - Protect against accidentally committed malicious configurations
+
+## 🔐 Privacy & Trust
+
+- **No data collection**: Watchtower runs entirely locally
+- **No network requests**: All scanning happens on your machine
+- **Open source**: Inspect the code to verify security claims
+- **Workspace isolation**: Scans only affect your current project
+
+## 🤝 Contributing
+
+Found a new security pattern we should detect? Have ideas for improving Watchtower?
+
+- Report security patterns at [GitHub Issues](https://github.com/your-repo/watchtower)
+- Submit PRs for new analyzers
+- Share feedback on detection accuracy
+
+## 📝 License
+
+MIT License - See LICENSE file for details
 
 ---
 
-## Following extension guidelines
+**🛡️ Stay protected. Stay productive. Choose Watchtower.**
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+*Don't let malicious configurations compromise your development environment. Install Watchtower today and code with confidence.*

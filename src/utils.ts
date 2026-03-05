@@ -10,7 +10,7 @@ export const isSensitiveFile = (uri: vscode.Uri): boolean => {
     const path = uri.fsPath
     const relativePath = vscode.workspace.asRelativePath(uri, false)
 
-    return SensitiveFiles.some(sensitiveFile => minimatch(relativePath, `/${sensitiveFile}`))
+    return SensitiveFiles.some(sensitiveFile => minimatch(relativePath, `${sensitiveFile}`))
 }
 
 export const findFiles = async (pattern: string): Promise<vscode.Uri[]> => {

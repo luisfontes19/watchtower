@@ -214,10 +214,6 @@ export const generateTrustActionsHTML = (projectState?: { startupScanDisabled: b
         <script>
             const vscode = acquireVsCodeApi();
 
-            function trustProject() {
-                vscode.postMessage({ command: 'trustProject' });
-            }
-
             function disableStartupScan() {
                 vscode.postMessage({ command: 'disableStartupScan' });
             }

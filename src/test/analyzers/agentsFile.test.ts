@@ -1,6 +1,7 @@
 import * as assert from 'assert'
 import * as vscode from 'vscode'
 import { AgentsAnalyzer } from '../../analyzers/agentsFile'
+
 suite('AgentsAnalyzer', () => {
 
     suite('.isAgentFile matching paths', () => {

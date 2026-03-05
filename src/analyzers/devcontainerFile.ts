@@ -23,7 +23,7 @@ export class DevContainerAnalyzer extends StaticAnalyzer {
                 name: `Detected MCP Server '${serverName}' in devcontainer.json`,
                 detail: `A MCP server named '${serverName}' was detected in devcontainer.json. MCP servers can execute arbitrary commands and may pose a security risk if not properly secured. Please review the server configuration to ensure it is safe.`,
                 priority: 'medium',
-                file: uri.fsPath
+                file: vscode.workspace.asRelativePath(uri, false)
             })
         }
         return findings

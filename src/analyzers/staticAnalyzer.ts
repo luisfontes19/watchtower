@@ -20,7 +20,7 @@ export abstract class StaticAnalyzer {
                 name: `Sensitive file ${vscode.workspace.asRelativePath(uri)} edited in the background`,
                 detail,
                 priority: priority as any,
-                file: uri.fsPath
+                file: vscode.workspace.asRelativePath(uri, false)
             })
 
         }

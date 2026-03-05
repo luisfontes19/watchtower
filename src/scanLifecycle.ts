@@ -60,7 +60,7 @@ export class ScanLifecycle {
     /**
      * Check if the project has been acknowledged (user has seen scan results and acknowledged them)
      */
-    private isProjectAcknowledged(): boolean {
+    private isProjectProjectStartupScanDisabled(): boolean {
         const key = this.getStorageKey('projectAcknowledged')
         const value = this.workspaceStorage.get<boolean>(key, false)
         console.log(`Watchtower: Project acknowledged for ${this.getProjectKey()}: ${value}`)
@@ -70,7 +70,7 @@ export class ScanLifecycle {
     /**
      * Check if protections (scanning + runtime monitoring) are disabled
      */
-    private areProtectionsDisabled(): boolean {
+    private areProjectProtectionsDisabled(): boolean {
         const key = this.getStorageKey('protectionsDisabled')
         const value = this.workspaceStorage.get<boolean>(key, false)
         console.log(`Watchtower: Protections disabled for ${this.getProjectKey()}: ${value}`)
@@ -80,7 +80,7 @@ export class ScanLifecycle {
     /**
      * Set project acknowledged status
      */
-    private async setProjectAcknowledged(acknowledged: boolean): Promise<void> {
+    private async setDisableStartupScanForProject(acknowledged: boolean): Promise<void> {
         const key = this.getStorageKey('projectAcknowledged')
         console.log(`Watchtower: Setting project acknowledged for ${this.getProjectKey()}: ${acknowledged}`)
         await this.workspaceStorage.update(key, acknowledged)
@@ -93,7 +93,7 @@ export class ScanLifecycle {
     /**
      * Set protections disabled status
      */
-    private async setProtectionsDisabled(disabled: boolean): Promise<void> {
+    private async setProtectionsDisabledForProject(disabled: boolean): Promise<void> {
         const key = this.getStorageKey('protectionsDisabled')
         console.log(`Watchtower: Setting protections disabled for ${this.getProjectKey()}: ${disabled}`)
         await this.workspaceStorage.update(key, disabled)
@@ -101,13 +101,6 @@ export class ScanLifecycle {
         // Verify the save worked
         const saved = this.workspaceStorage.get<boolean>(key, false)
         console.log(`Watchtower: Verification - protections disabled is now: ${saved}`)
-    }
-
-    /**
-     * Check if workspace is restricted (untrusted)
-     */
-    private isWorkspaceRestricted(): boolean {
-        return !vscode.workspace.isTrusted
     }
 
     /**
@@ -127,15 +120,29 @@ export class ScanLifecycle {
     }
 
     /**
+     * Check if startup scans are disabled globally via configuration
+     */
+    private areStartupScansDisabledGlobally(): boolean {
+        const config = vscode.workspace.getConfiguration('watchtower')
+        const value = !config.get<boolean>('enableStartupScans', true)
+        console.log(`Watchtower: Global startup scans disabled via config: ${value}`)
+        return value
+    }
+
+    /**
      * Should run scan on startup?
      */
     public shouldRunStartupScan(): boolean {
+        // Don't run if startup scans are disabled globally via configuration
+        if (this.areStartupScansDisabledGlobally()) {
+            return false
+        }
         // Don't run if protections are disabled
-        if (this.areProtectionsDisabled()) {
+        if (this.areProjectProtectionsDisabled()) {
             return false
         }
         // Don't run if already acknowledged (but keep background protection)
-        if (this.isProjectAcknowledged()) {
+        if (this.isProjectProjectStartupScanDisabled()) {
             return false
         }
         return true
@@ -146,7 +153,7 @@ export class ScanLifecycle {
      */
     public shouldRunBackgroundMonitoring(): boolean {
         // Run background monitoring unless protections are fully disabled
-        return !this.areProtectionsDisabled()
+        return !this.areProjectProtectionsDisabled()
     }
 
     /**
@@ -211,8 +218,8 @@ export class ScanLifecycle {
     /**
      * Handle disable startup scan action
      */
-    private async handleDisableStartupScan(): Promise<void> {
-        await this.setProjectAcknowledged(true)
+    private async handleDisableStartupScanForProject(): Promise<void> {
+        await this.setDisableStartupScanForProject(true)
         vscode.window.showInformationMessage(
             'Startup scans are disabled, but background protection remains active for sensitive file changes.'
         )
@@ -221,7 +228,7 @@ export class ScanLifecycle {
     /**
      * Handle disable all protections action
      */
-    private async handleDisableAllProtections(): Promise<void> {
+    private async handleDisableAllProtectionsForProject(): Promise<void> {
         const confirmMessage = 'Disabling protections will stop both startup scans and runtime protection (detection of changes to sensitive files). This reduces security monitoring. Do you want to proceed?'
 
         const choice = await vscode.window.showWarningMessage(
@@ -231,7 +238,7 @@ export class ScanLifecycle {
         )
 
         if (choice === 'Yes, Disable All Protections') {
-            await this.setProtectionsDisabled(true)
+            await this.setProtectionsDisabledForProject(true)
             vscode.window.showInformationMessage(
                 'All protections disabled. Use "Watchtower: Enable Background Protections" to re-enable security monitoring.'
             )
@@ -243,8 +250,8 @@ export class ScanLifecycle {
      */
     private async handleShowReport(findings: Finding[]): Promise<void> {
         const projectState = {
-            startupScanDisabled: this.isProjectAcknowledged(),
-            allScansDisabled: this.areProtectionsDisabled()
+            startupScanDisabled: this.isProjectProjectStartupScanDisabled(),
+            allScansDisabled: this.areProjectProtectionsDisabled()
         }
         const reportHtml = generateHTMLReport(findings, false, true, projectState) // Include trust actions with state
         const panel = vscode.window.createWebviewPanel(
@@ -259,23 +266,21 @@ export class ScanLifecycle {
         // Handle messages from webview
         panel.webview.onDidReceiveMessage(async (message) => {
             switch (message.command) {
-                case 'trustProject':
-                    await this.handleTrustProject()
-                    break
+
                 case 'disableStartupScan':
-                    await this.handleDisableStartupScan()
+                    await this.handleDisableStartupScanForProject()
                     panel.dispose()
                     break
                 case 'enableStartupScan':
-                    await this.enableStartupScan()
+                    await this.enableProjectStartupScan()
                     panel.dispose()
                     break
                 case 'disableAllScans':
-                    await this.handleDisableAllProtections()
+                    await this.handleDisableAllProtectionsForProject()
                     panel.dispose()
                     break
                 case 'enableAllScans':
-                    await this.enableBackgroundProtections()
+                    await this.enableBackgroundProtectionsForProject()
                     panel.dispose()
                     break
                 case 'exportToJSON':
@@ -285,22 +290,6 @@ export class ScanLifecycle {
         })
     }
 
-    /**
-     * Handle trust project action from report
-     */
-    private async handleTrustProject(): Promise<void> {
-        const choice = await vscode.window.showInformationMessage(
-            'Trust this project? This will disable all security scans for this workspace.',
-            'Yes, Trust Project',
-            'Cancel'
-        )
-
-        if (choice === 'Yes, Trust Project') {
-            await this.setProjectAcknowledged(true)
-            await this.setProtectionsDisabled(true)
-            vscode.window.showInformationMessage('Project trusted. All security monitoring disabled.')
-        }
-    }
 
     /**
      * Handle JSON export from report
@@ -337,30 +326,23 @@ export class ScanLifecycle {
     }
 
     /**
-     * Reset project acknowledgement (legacy method - same as enableStartupScan)
-     */
-    public async resetProjectAcknowledgement(): Promise<void> {
-        await this.enableStartupScan()
-    }
-
-    /**
      * Enable all protections (legacy method)
      */
-    public async enableProtections(): Promise<void> {
-        await this.setProtectionsDisabled(false)
-        await this.setProjectAcknowledged(false)
+    public async enableProtectionsForProject(): Promise<void> {
+        await this.setProtectionsDisabledForProject(false)
+        await this.setDisableStartupScanForProject(false)
         vscode.window.showInformationMessage('All protections enabled. Startup scans and background monitoring are now active.')
     }
 
     /**
      * Get current protection status for display
      */
-    public getProtectionStatus(): string {
+    public getProtectionStatusForProject(): string {
         const projectName = this.getProjectKey()
 
-        if (this.areProtectionsDisabled()) {
+        if (this.areProjectProtectionsDisabled()) {
             return `Protections are fully disabled for ${projectName}`
-        } else if (this.isProjectAcknowledged()) {
+        } else if (this.isProjectProjectStartupScanDisabled()) {
             return `Project ${projectName} acknowledged - startup scans disabled, background protection active`
         } else {
             return `Full protection active for ${projectName} - startup scans and background monitoring enabled`
@@ -446,31 +428,31 @@ export class ScanLifecycle {
     /**
      * Enable startup scan for current project
      */
-    public async enableStartupScan(): Promise<void> {
-        await this.setProjectAcknowledged(false)
+    public async enableProjectStartupScan(): Promise<void> {
+        await this.setDisableStartupScanForProject(false)
         vscode.window.showInformationMessage('Startup scans enabled. Security monitoring will run on workspace startup.')
     }
 
     /**
      * Disable startup scan for current project
      */
-    public async disableStartupScan(): Promise<void> {
-        await this.setProjectAcknowledged(true)
+    public async disableProjectStartupScan(): Promise<void> {
+        await this.setDisableStartupScanForProject(true)
         vscode.window.showInformationMessage('Startup scans disabled. Background protection remains active for sensitive file changes.')
     }
 
     /**
      * Enable background protections for current project
      */
-    public async enableBackgroundProtections(): Promise<void> {
-        await this.setProtectionsDisabled(false)
+    public async enableBackgroundProtectionsForProject(): Promise<void> {
+        await this.setProtectionsDisabledForProject(false)
         vscode.window.showInformationMessage('Background protections enabled. Security monitoring is now active for file changes.')
     }
 
     /**
      * Disable background protections for current project
      */
-    public async disableBackgroundProtections(): Promise<void> {
+    public async disableProjectBackgroundProtections(): Promise<void> {
         const confirmMessage = 'Disabling background protections will stop runtime security monitoring (detection of changes to sensitive files). This reduces security. Do you want to proceed?'
 
         const choice = await vscode.window.showWarningMessage(
@@ -480,7 +462,7 @@ export class ScanLifecycle {
         )
 
         if (choice === 'Yes, Disable Background Protections') {
-            await this.setProtectionsDisabled(true)
+            await this.setProtectionsDisabledForProject(true)
             vscode.window.showInformationMessage('Background protections disabled. Only manual scans will be available.')
         }
     }

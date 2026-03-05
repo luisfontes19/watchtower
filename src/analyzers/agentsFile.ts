@@ -22,7 +22,7 @@ export class AgentsAnalyzer extends StaticAnalyzer {
     static isAgentFile(uri: vscode.Uri): boolean {
         const relativePath = vscode.workspace.asRelativePath(uri, false)
 
-        return AgentsAnalyzer.AGENTS_FILE_NAMES.some(pattern => minimatch(relativePath, `/${pattern}`))
+        return AgentsAnalyzer.AGENTS_FILE_NAMES.some(pattern => minimatch(relativePath, pattern, { debug: true, }) === true)
 
     }
 

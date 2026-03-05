@@ -113,7 +113,10 @@ export class Watchtower {
             return
         }
 
-        const findings = await this.analyzeFile(uri, undefined, true)
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri)
+        const path = vscode.Uri.joinPath(workspaceFolder!.uri, vscode.workspace.asRelativePath(uri))
+
+        const findings = await this.analyzeFile(path, undefined, true)
         await this.showAlerts(findings)
     }
 

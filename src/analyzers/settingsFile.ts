@@ -28,7 +28,7 @@ export class SettingsAnalyzer extends StaticAnalyzer {
                         name: `Custom Interpreter Path defined in ${vscode.workspace.asRelativePath(uri)}`,
                         detail: `Setting "${currentPath}" points to a custom interpreter path: "${value}". This could be an attempt to execute arbitrary binaries.`,
                         priority: 'high',
-                        file: uri.fsPath
+                        file: vscode.workspace.asRelativePath(uri, false)
                     })
                 }
                 if (typeof value === 'object') {
@@ -115,7 +115,7 @@ export class SettingsAnalyzer extends StaticAnalyzer {
             name: "Insecure AI agent configurations can lead to compromises",
             detail: issues.join('\n'),
             priority,
-            file: uri.fsPath
+            file: vscode.workspace.asRelativePath(uri, false)
         }
     }
 

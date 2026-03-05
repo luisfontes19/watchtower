@@ -41,7 +41,7 @@ export class JsonFile extends StaticAnalyzer {
                 name: `Potential data exfiltration via json $schema in ${relativeFile} (Too many query params)`,
                 detail: `Schema URL (${url}) contains ${entries.length} query parameters. A high number of query parameters may indicate potential data exfiltration`,
                 priority: 'medium',
-                file: fileUri.fsPath
+                file: vscode.workspace.asRelativePath(fileUri, false)
             })
         }
 
@@ -52,7 +52,7 @@ export class JsonFile extends StaticAnalyzer {
                     name: `Potential data exfiltration via json $schema in ${relativeFile} (Big query param name)`,
                     detail: `Schema URL query parameter name "${name}" is ${name.length} chars. It seems too big, which may indicate data exfiltration`,
                     priority: 'medium',
-                    file: fileUri.fsPath
+                    file: vscode.workspace.asRelativePath(fileUri, false)
                 })
             }
             if (value.length > MAX_PARAM_LENGTH) {
@@ -61,7 +61,7 @@ export class JsonFile extends StaticAnalyzer {
                     name: `Potential data exfiltration via json $schema in ${relativeFile} (Big query param value)`,
                     detail: `Schema URL query parameter value "${value}" is ${value.length} chars. It seems too big, which may indicate data exfiltration`,
                     priority: 'medium',
-                    file: fileUri.fsPath
+                    file: vscode.workspace.asRelativePath(fileUri, false)
                 })
             }
         }
