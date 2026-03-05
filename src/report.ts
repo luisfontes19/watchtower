@@ -1,6 +1,14 @@
 import * as vscode from 'vscode'
 import { Finding } from './types'
 
+/**
+ * Sanitize HTML content to prevent XSS attacks
+ */
+const sanitizeHTML = (str: string | number | boolean): string => {
+    return String(str).replace(/[\u00A0-\u9999<>\&]/g, i => '&#' + i.charCodeAt(0) + ';')
+
+}
+
 const priorityConfig = {
     high: { emoji: '🔴', label: 'HIGH', color: '#ef5350', bg: 'rgba(239,83,80,0.08)', border: 'rgba(239,83,80,0.25)' },
     medium: { emoji: '🟠', label: 'MEDIUM', color: '#ffa726', bg: 'rgba(255,167,38,0.08)', border: 'rgba(255,167,38,0.25)' },
@@ -16,18 +24,44 @@ const typeEmoji: Record<string, string> = {
 
 const renderFinding = (f: Finding, index: number) => {
     const sev = priorityConfig[f.priority]
-    const icon = typeEmoji[f.type] ?? '🔍'
+    const icon = typeEmoji[sanitizeHTML(f.type)] ?? '🔍'
 
     return `
         <div class="finding" style="border-left:3px solid ${sev.border};background:${sev.bg};border-radius:8px;padding:16px 20px;margin-bottom:14px;">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
                 <span style="font-size:1.15em;">${icon}</span>
-                <span style="font-weight:700;font-size:1.05em;color:#e0e0e0;">[${f.type}] ${f.name}</span>
+                <span style="font-weight:700;font-size:1.05em;color:#e0e0e0;">[${sanitizeHTML(f.type)}] ${sanitizeHTML(f.name)}</span>
                 <span class="badge" style="background:${sev.border};color:${sev.color};padding:2px 8px;border-radius:4px;font-size:0.75em;font-weight:700;letter-spacing:0.5px;">${sev.emoji} ${sev.label}</span>
             </div>
-            <p style="margin:6px 0 8px 28px;color:#bdbdbd;font-size:0.95em;line-height:1.5;">${f.detail.replace(/\n/g, '<br>')}</p>
-            ${f.file ? `<div style="margin-left:28px;font-size:0.82em;color:#64b5f6;">📂 <code style="background:rgba(100,181,246,0.1);padding:2px 6px;border-radius:3px;">${f.file}</code></div>` : ''}
+            <p style="margin:6px 0 8px 28px;color:#bdbdbd;font-size:0.95em;line-height:1.5;">${sanitizeHTML(f.detail).replace(/\n/g, '<br>')}</p>
+            ${f.file ? `<div style="margin-left:28px;font-size:0.82em;color:#64b5f6;">📂 <code style="background:rgba(100,181,246,0.1);padding:2px 6px;border-radius:3px;">${sanitizeHTML(f.file)}</code></div>` : ''}
         </div>`
+}
+
+/**
+ * Generate JSON report data from findings
+ */
+export const generateJSONReport = (findings: Finding[], partial: boolean = false): string => {
+    const reportData = {
+        metadata: {
+            generatedAt: new Date().toISOString(),
+            scanType: partial ? 'partial' : 'full',
+            totalFindings: findings.length,
+            summary: {
+                high: findings.filter(f => f.priority === 'high').length,
+                medium: findings.filter(f => f.priority === 'medium').length,
+                low: findings.filter(f => f.priority === 'low').length
+            }
+        },
+        findings: findings.map(finding => ({
+            type: finding.type,
+            name: finding.name,
+            priority: finding.priority,
+            detail: finding.detail,
+            file: finding.file || null
+        }))
+    }
+    return JSON.stringify(reportData, null, 2)
 }
 
 export const generateHTMLReport = (findings: Finding[], partial: boolean = false, includeTrustActions: boolean = false, projectState?: { startupScanDisabled: boolean; allScansDisabled: boolean }) => {
@@ -139,10 +173,10 @@ export const generateTrustActionsHTML = (projectState?: { startupScanDisabled: b
     const allScansDisabled = projectState?.allScansDisabled || false
 
     // Determine button states
-    const startupButton = startupScanDisabled 
+    const startupButton = startupScanDisabled
         ? { text: 'Enable Startup Scan', action: 'enableStartupScan()', color: '#4caf50' }
         : { text: 'Disable Startup Scan', action: 'disableStartupScan()', color: '#ffa726' }
-    
+
     const allScansButton = allScansDisabled
         ? { text: 'Enable All Scans', action: 'enableAllScans()', color: '#4caf50' }
         : { text: 'Disable All Scans', action: 'disableAllScans()', color: '#f44336' }
@@ -150,9 +184,10 @@ export const generateTrustActionsHTML = (projectState?: { startupScanDisabled: b
     let html = `
         <div class="actions" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #333;">
             <h3 style="color: #42a5f5; margin-bottom: 16px;">🛡️ Project Actions</h3>
-            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+            <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
                 <button class="button" onclick="${startupButton.action}" style="background: ${startupButton.color}; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-family: inherit;">${startupButton.text}</button>
                 <button class="button" onclick="${allScansButton.action}" style="background: ${allScansButton.color}; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-family: inherit;">${allScansButton.text}</button>
+                <button class="button" onclick="exportToJSON()" style="background: #7c4dff; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-family: inherit;">📄 Export to JSON</button>
             </div>
             <div style="margin-bottom: 16px; font-size: 0.9em; color: #9e9e9e;">
                 <p style="margin: 4px 0;">• <strong>Startup Scan:</strong> ${startupScanDisabled ? 'Currently disabled' : 'Currently enabled'} - Automatic scans when opening workspace</p>
@@ -197,6 +232,10 @@ export const generateTrustActionsHTML = (projectState?: { startupScanDisabled: b
 
             function enableAllScans() {
                 vscode.postMessage({ command: 'enableAllScans' });
+            }
+
+            function exportToJSON() {
+                vscode.postMessage({ command: 'exportToJSON' });
             }
         </script>`
 

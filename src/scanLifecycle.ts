@@ -1,6 +1,7 @@
 import * as path from 'path'
+import * as fs from 'fs'
 import * as vscode from 'vscode'
-import { generateHTMLReport } from './report'
+import { generateHTMLReport, generateJSONReport } from './report'
 import { Finding } from './types'
 import { Watchtower } from './watchtower'
 
@@ -277,6 +278,9 @@ export class ScanLifecycle {
                     await this.enableBackgroundProtections()
                     panel.dispose()
                     break
+                case 'exportToJSON':
+                    await this.handleExportToJSON(findings, false)
+                    break
             }
         })
     }
@@ -299,6 +303,40 @@ export class ScanLifecycle {
     }
 
     /**
+     * Handle JSON export from report
+     */
+    private async handleExportToJSON(findings: Finding[], partial: boolean): Promise<void> {
+        try {
+            const saveDialogOptions: vscode.SaveDialogOptions = {
+                defaultUri: vscode.Uri.file('watchtower-report.json'),
+                filters: {
+                    'JSON Files': ['json'],
+                    'All Files': ['*']
+                },
+                title: 'Save Watchtower Report as JSON'
+            }
+
+            const fileUri = await vscode.window.showSaveDialog(saveDialogOptions)
+            
+            if (!fileUri) {
+                // User canceled the dialog
+                return
+            }
+
+            const jsonData = generateJSONReport(findings, partial)
+            await fs.promises.writeFile(fileUri.fsPath, jsonData, 'utf8')
+            
+            vscode.window.showInformationMessage(
+                `Report exported successfully to ${path.basename(fileUri.fsPath)}`
+            )
+        } catch (error) {
+            vscode.window.showErrorMessage(
+                `Failed to export report: ${error instanceof Error ? error.message : 'Unknown error'}`
+            )
+        }
+    }
+
+    /**
      * Reset project acknowledgement (legacy method - same as enableStartupScan)
      */
     public async resetProjectAcknowledgement(): Promise<void> {
@@ -306,7 +344,7 @@ export class ScanLifecycle {
     }
 
     /**
-     * Enable all protections (legacy method) 
+     * Enable all protections (legacy method)
      */
     public async enableProtections(): Promise<void> {
         await this.setProtectionsDisabled(false)
