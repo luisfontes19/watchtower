@@ -11,14 +11,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Commands
 	console.log("Watchtower Extension Loaded")
-	context.subscriptions.push(vscode.commands.registerCommand('watchtower.analyze', () => scanLifecycle.runManualScan()))
-	context.subscriptions.push(vscode.commands.registerCommand('watchtower.resetAcknowledgement', () => scanLifecycle.resetProjectAcknowledgement()))
-	context.subscriptions.push(vscode.commands.registerCommand('watchtower.enableProtections', () => scanLifecycle.enableProtections()))
-	context.subscriptions.push(vscode.commands.registerCommand('watchtower.disableProtections', () => scanLifecycle.handleDisableProtections()))
-	context.subscriptions.push(vscode.commands.registerCommand('watchtower.checkStatus', () => {
-		const status = scanLifecycle.getProtectionStatus()
-		vscode.window.showInformationMessage(status)
-	}))
+	context.subscriptions.push(vscode.commands.registerCommand('watchtower.scan', () => scanLifecycle.runManualScan()))
+	context.subscriptions.push(vscode.commands.registerCommand('watchtower.enableStartupScan', () => scanLifecycle.enableStartupScan()))
+	context.subscriptions.push(vscode.commands.registerCommand('watchtower.disableStartupScan', () => scanLifecycle.disableStartupScan()))
+	context.subscriptions.push(vscode.commands.registerCommand('watchtower.enableBackgroundProtections', () => scanLifecycle.enableBackgroundProtections()))
+	context.subscriptions.push(vscode.commands.registerCommand('watchtower.disableBackgroundProtections', () => scanLifecycle.disableBackgroundProtections()))
 
 
 	// Listeners

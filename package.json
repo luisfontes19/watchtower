@@ -21,43 +21,26 @@
   "contributes": {
     "commands": [
       {
-        "command": "watchtower.analyze",
-        "title": "Watchtower: Analyze Workspace"
+        "command": "watchtower.scan",
+        "title": "Watchtower: Scan Workspace"
       },
       {
-        "command": "watchtower.resetAcknowledgement",
-        "title": "Watchtower: Reset Project Acknowledgement"
+        "command": "watchtower.enableStartupScan",
+        "title": "Watchtower: Enable Project Startup Scan"
       },
       {
-        "command": "watchtower.enableProtections",
-        "title": "Watchtower: Enable Protections"
+        "command": "watchtower.disableStartupScan",
+        "title": "Watchtower: Disable Project Startup Scan"
       },
       {
-        "command": "watchtower.disableProtections",
-        "title": "Watchtower: Disable Protections"
+        "command": "watchtower.enableBackgroundProtections",
+        "title": "Watchtower: Enable Project Background Protections"
       },
       {
-        "command": "watchtower.checkStatus",
-        "title": "Watchtower: Check Protection Status"
+        "command": "watchtower.disableBackgroundProtections",
+        "title": "Watchtower: Disable Project Background Protections"
       }
-    ],
-    "configuration": {
-      "title": "Watchtower",
-      "properties": {
-        "watchtower.projectAcknowledged": {
-          "type": "boolean",
-          "default": false,
-          "scope": "resource",
-          "description": "Whether the user has acknowledged the security scan results for this project."
-        },
-        "watchtower.protectionsDisabled": {
-          "type": "boolean",
-          "default": false,
-          "scope": "resource",
-          "description": "Whether all security protections (scans and runtime monitoring) are disabled for this project."
-        }
-      }
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",
