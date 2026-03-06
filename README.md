@@ -2,6 +2,8 @@
 
 **Protect your development environment from malicious configurations and hidden threats.**
 
+![Watchtower Banner](data/images/logo.png)
+
 Watchtower is a comprehensive security extension that scans your VSCode workspace for potential security risks, malicious configurations, and hidden code that could compromise your development environment.
 
 ## 🔒 Why You Need Watchtower
@@ -39,14 +41,14 @@ Watchtower automatically detects these threats and provides detailed security re
 
 ## ✨ Features
 
-![Watchtower Report](./data/features1.jpg)
+![Watchtower Report](data/images/features1.jpg)
 
 ### 🔍 **Invisible Code Detection**
 
 - Detects hidden Unicode tag characters (`U+E0000-U+E007F`) used to hide malicious code
 - Protects against steganographic attacks where code is invisible to the human eye
 
-![Invisible Code](./data/features3.jpg)
+![Invisible Code](data/images/features3.jpg)
 
 ### 📋 **Malicious Task Scanner**
 
@@ -69,7 +71,7 @@ Scans `.vscode/tasks.json` for dangerous commands including:
 - **Monitoring** of file changes in the background, for sensitive configurations
 - **Startup scans** when opening new projects
 
-![Real Time](./data/features2.jpg)
+![Real Time](data/images/features2.jpg)
 
 ### 📊 **Detailed Security Reports**
 
