@@ -216,6 +216,59 @@ const typeEmoji: Record<string, string> = {
     'MCP Server Detected': '🔌',
 }
 
+const isTrojanSource = (f: Finding) => f.name.startsWith('Trojan Source Character Detected')
+
+const renderTrojanSourceGroup = (findings: Finding[]) => {
+    const first = findings[0]
+    const sev = priorityConfig[first.priority]
+    const icon = '🔍'
+
+    const occurrences = findings.map(f => {
+        const charMatch = f.detail.match(/`(U\+[0-9A-F]+)`/)
+        const code = charMatch ? charMatch[1] : 'unknown'
+        const line = f.range ? f.range.start.line + 1 : '?'
+        const col = f.range ? f.range.start.character + 1 : '?'
+        return `<code style="background:rgba(100,181,246,0.1);padding:2px 6px;border-radius:3px;">${sanitizeHTML(code)}</code> at line ${line}, col ${col}`
+    })
+
+    return `
+        <div class="finding" style="border-left:3px solid ${sev.border};background:${sev.bg};border-radius:8px;padding:16px 20px;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                <span style="font-size:1.15em;">${icon}</span>
+                <span style="font-weight:700;font-size:1.05em;color:#e0e0e0;">[${sanitizeHTML(first.type)}] Trojan Source Characters Detected (${findings.length} occurrence${findings.length > 1 ? 's' : ''})</span>
+                <span class="badge" style="background:${sev.border};color:${sev.color};padding:2px 8px;border-radius:4px;font-size:0.75em;font-weight:700;letter-spacing:0.5px;">${sev.emoji} ${sev.label}</span>
+            </div>
+            <p style="margin:6px 0 8px 28px;color:#bdbdbd;font-size:0.95em;line-height:1.5;">Trojan Source attacks use special Unicode characters to manipulate the display of code, making it appear different from its actual execution.</p>
+            <div style="margin:0 0 8px 28px;color:#bdbdbd;font-size:0.9em;line-height:1.8;">
+                ${occurrences.join('<br>')}
+            </div>
+            ${first.file ? `<div style="margin-left:28px;font-size:0.82em;color:#64b5f6;">📂 <code style="background:rgba(100,181,246,0.1);padding:2px 6px;border-radius:3px;">${sanitizeHTML(first.file)}</code></div>` : ''}
+        </div>`
+}
+
+const renderFindings = (items: Finding[]) => {
+    const result: string[] = []
+    const trojanByFile = new Map<string, Finding[]>()
+    const nonTrojan: Finding[] = []
+
+    for (const f of items) {
+        if (isTrojanSource(f)) {
+            const group = trojanByFile.get(f.file) ?? []
+            group.push(f)
+            trojanByFile.set(f.file, group)
+        } else {
+            nonTrojan.push(f)
+        }
+    }
+
+    result.push(...nonTrojan.map((f, i) => renderFinding(f, i)))
+    for (const group of trojanByFile.values()) {
+        result.push(renderTrojanSourceGroup(group))
+    }
+
+    return result.join('')
+}
+
 const renderFinding = (f: Finding, index: number) => {
     const sev = priorityConfig[f.priority]
     const icon = typeEmoji[sanitizeHTML(f.type)] ?? '🔍'
@@ -290,7 +343,7 @@ export const generateHTMLReport = (findings: Finding[], partial: boolean = false
                         ${cfg.emoji} ${cfg.label} PRIORITY
                         <span style="font-size:0.8em;color:#757575;font-weight:400;">(${items.length} finding${items.length > 1 ? 's' : ''})</span>
                     </h3>
-                    ${items.map((f, i) => renderFinding(f, i)).join('')}
+                    ${renderFindings(items)}
                 </div>`)
         }
         return sections.join('')
