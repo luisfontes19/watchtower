@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as vscode from 'vscode'
 import { generateHTMLReport, generateJSONReport } from './report'
-import { Finding } from './types'
+import { Finding, InlineFindingType } from './types'
 import { Watchtower } from './watchtower'
 
 export interface ScanSummary {
@@ -70,7 +70,7 @@ export class ScanLifecycle {
     /**
      * Check if protections (scanning + runtime monitoring) are disabled
      */
-    private areProjectProtectionsDisabled(): boolean {
+    public areProjectProtectionsDisabled(): boolean {
         const key = this.getStorageKey('protectionsDisabled')
         const value = this.workspaceStorage.get<boolean>(key, false)
         console.log(`Watchtower: Protections disabled for ${this.getProjectKey()}: ${value}`)
@@ -129,6 +129,13 @@ export class ScanLifecycle {
         return value
     }
 
+    private async inlineFindingsSettings(): Promise<InlineFindingType> {
+        const config = vscode.workspace.getConfiguration('watchtower')
+        const value = config.get<InlineFindingType>('inlineFindings', InlineFindingType.invisible)
+        console.log(`Watchtower: Inline findings setting: ${value}`)
+        return value
+    }
+
     /**
      * Should run scan on startup?
      */
@@ -154,6 +161,10 @@ export class ScanLifecycle {
     public shouldRunBackgroundMonitoring(): boolean {
         // Run background monitoring unless protections are fully disabled
         return !this.areProjectProtectionsDisabled()
+    }
+
+    public shouldShowInlineFindings(): boolean {
+        return this.shouldRunBackgroundMonitoring() &&
     }
 
     /**

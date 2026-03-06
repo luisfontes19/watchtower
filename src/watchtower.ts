@@ -12,16 +12,6 @@ import { Finding } from './types'
 import { isSensitiveFile } from './utils'
 
 
-export const SensitiveFiles = [
-    '.devcontainer/devcontainer.json',
-    '.vscode/settings.json',
-    '.vscode/tasks.json',
-    '.vscode/launch.json',
-    '**/*.md',
-    '**/*.json',
-    ...AgentsAnalyzer.AGENTS_FILE_NAMES
-]
-
 export class Watchtower {
     private static instance: Watchtower
 
@@ -32,8 +22,9 @@ export class Watchtower {
     private taskAnalyzer: TaskAnalyzer
     private settingsAnalyzer: SettingsAnalyzer
     private launchAnalyzer: LaunchAnalyzer
+    private inlineDiagnostics: vscode.DiagnosticCollection
 
-
+    public findings: Finding[] = []
 
 
     private constructor() {
@@ -44,6 +35,8 @@ export class Watchtower {
         this.taskAnalyzer = new TaskAnalyzer()
         this.settingsAnalyzer = new SettingsAnalyzer()
         this.launchAnalyzer = new LaunchAnalyzer()
+
+        this.inlineDiagnostics = vscode.languages.createDiagnosticCollection('watchtowerFindings')
     }
 
 
@@ -52,6 +45,37 @@ export class Watchtower {
             Watchtower.instance = new Watchtower()
         }
         return Watchtower.instance
+    }
+
+    public onWorkspaceTrusted() {
+        vscode.window.showInformationMessage('Workspace is now trusted. You can safely analyze your code.')
+    }
+
+    public async onFileCreated(uri: vscode.Uri, scanLifecycle: any) {
+        // Check if background monitoring should run
+        if (!scanLifecycle.shouldRunBackgroundMonitoring()) {
+            return
+        }
+
+        const findings = await this.scanFile(uri, undefined, true)
+        await this.showAlerts(findings)
+    }
+
+    public async onFileOpened(e: vscode.TextDocument) {
+        this.scanFile(e.uri, new TextEncoder().encode(e.getText()))
+    }
+
+    public async onFileChanged(uri: vscode.Uri, scanLifecycle: any) {
+        // Check if background monitoring should run
+        if (!scanLifecycle.shouldRunBackgroundMonitoring()) {
+            return
+        }
+
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri)
+        const path = vscode.Uri.joinPath(workspaceFolder!.uri, vscode.workspace.asRelativePath(uri))
+
+        const findings = await this.scanFile(path, undefined, true)
+        await this.showAlerts(findings)
     }
 
     /**
@@ -80,12 +104,31 @@ export class Watchtower {
                 const relativePath = vscode.workspace.asRelativePath(file)
                 progress.report({ increment: incrementPerFile, message: `Analyzing ${relativePath} (${i + 1}/${totalFiles})` })
 
-                const fileFindings = await this.analyzeFile(file)
+                const fileFindings = await this.scanFile(file)
                 findings.push(...fileFindings)
             }
 
+            this.findings = findings
+
+            this.inlineDiagnostics.clear()
+            this.setInlineFindings(findings)
+
             return findings
         })
+    }
+
+    public setInlineFindings(findings: Finding[]) {
+        for (const finding of findings) {
+            if (finding.range && finding.file) {
+                const uri = vscode.workspace.workspaceFolders ? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, finding.file) : null
+                if (!uri) continue
+
+                const diagnostic = new vscode.Diagnostic(finding.range, finding.detail, vscode.DiagnosticSeverity.Warning)
+                diagnostic.source = 'Watchtower'
+
+                this.inlineDiagnostics.set(uri, [diagnostic])
+            }
+        }
     }
 
     public generateHTMLReport(findings: Finding[], partial: boolean = false): string {
@@ -93,32 +136,7 @@ export class Watchtower {
     }
 
 
-    public onWorkspaceTrusted() {
-        vscode.window.showInformationMessage('Workspace is now trusted. You can safely analyze your code.')
-    }
 
-    public async onFileCreated(uri: vscode.Uri, scanLifecycle: any) {
-        // Check if background monitoring should run
-        if (!scanLifecycle.shouldRunBackgroundMonitoring()) {
-            return
-        }
-
-        const findings = await this.analyzeFile(uri, undefined, true)
-        await this.showAlerts(findings)
-    }
-
-    public async onFileChanged(uri: vscode.Uri, scanLifecycle: any) {
-        // Check if background monitoring should run
-        if (!scanLifecycle.shouldRunBackgroundMonitoring()) {
-            return
-        }
-
-        const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri)
-        const path = vscode.Uri.joinPath(workspaceFolder!.uri, vscode.workspace.asRelativePath(uri))
-
-        const findings = await this.analyzeFile(path, undefined, true)
-        await this.showAlerts(findings)
-    }
 
     public getSensitiveFileAnalyzers(uri: vscode.Uri): StaticAnalyzer[] {
         if (!isSensitiveFile(uri)) return []
@@ -153,7 +171,7 @@ export class Watchtower {
         return analyzers
     }
 
-    public async analyzeFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>, fileEdited: boolean = false): Promise<Finding[]> {
+    public async scanFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>, fileEdited: boolean = false): Promise<Finding[]> {
         const promises = []
 
         // Ensure we only read file once, when running on multiple analyzers, as vscode.workspace.fs.readFile can be expensive on large files or remote workspaces
@@ -193,7 +211,12 @@ export class Watchtower {
         promises.push(this.invisibleCodeAnalyzer.checkFile(uri, await ensureFileContent()))
 
         const results = await Promise.all(promises)
-        return results.flat()
+        const findings = results.flat()
+
+        this.inlineDiagnostics.delete(uri)
+        this.setInlineFindings(findings)
+
+        return findings
 
     }
 
@@ -247,3 +270,15 @@ export class Watchtower {
 
 
 }
+
+
+
+export const SensitiveFiles = () => [
+    '.devcontainer/devcontainer.json',
+    '.vscode/settings.json',
+    '.vscode/tasks.json',
+    '.vscode/launch.json',
+    '**/*.md',
+    '**/*.json',
+    ...AgentsAnalyzer.AGENTS_FILE_NAMES
+]

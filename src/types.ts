@@ -1,3 +1,4 @@
+import * as vscode from 'vscode'
 export enum FindingType {
     Task = "Suspicious Task",
     Configuration = "Suspicious Configuration",
@@ -15,9 +16,15 @@ export interface Finding {
     file: string,
     name: string,
     detail: string,
-    priority: 'low' | 'medium' | 'high'
+    priority: 'low' | 'medium' | 'high',
+    range?: vscode.Range
 }
 
+export enum InlineFindingType {
+    all = "all",
+    invisible = "invisible",
+    none = "none"
+}
 
 export interface TaskPresentation {
     reveal?: string        // "always" | "silent" | "never"

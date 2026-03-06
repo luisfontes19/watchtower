@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-import { AgentsAnalyzer } from './analyzers/agentsFile'
 import { ScanLifecycle } from './scanLifecycle'
 import { Watchtower } from './watchtower'
 
@@ -10,7 +9,6 @@ export function activate(context: vscode.ExtensionContext) {
 	const watchtower = Watchtower.getInstance()
 	const scanLifecycle = ScanLifecycle.getInstance(context)
 
-	AgentsAnalyzer.isAgentFile(vscode.Uri.file('CLAUDE.md')), true
 
 	// Commands
 	console.log("Watchtower Extension Loaded")
@@ -22,6 +20,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Listeners
 	context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(watchtower.onWorkspaceTrusted.bind(watchtower)))
+	context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(watchtower.onFileOpened.bind(watchtower)))
+
+
+
+
 	// context.subscriptions.push(vscode.tasks.onDidStartTask(watchtower.onDidStartTask.bind(watchtower)))
 	// context.subscriptions.push(vscode.workspace.onWillSaveTextDocument(watchtower.onWillSaveFile.bind(watchtower)))
 	// context.subscriptions.push(vscode.workspace.onWillCreateFiles(watchtower.onWillCreateFiles.bind(watchtower)))

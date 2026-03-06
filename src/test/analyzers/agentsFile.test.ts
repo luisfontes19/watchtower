@@ -5,7 +5,6 @@ import { AgentsAnalyzer } from '../../analyzers/agentsFile'
 suite('AgentsAnalyzer', () => {
 
     suite('.isAgentFile matching paths', () => {
-
         test('CLAUDE.md at root', () => {
             assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('CLAUDE.md')), true)
         })

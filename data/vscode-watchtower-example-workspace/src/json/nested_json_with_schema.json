@@ -1,0 +1,9 @@
+{
+    "$schema": "./schemas/my-custom-schema.schema.json?a=apoisduhgyasidojpkasidhugytausidojasuhdgy",
+    "inventory": [
+        {
+            "id": 1,
+            "status": "in-stock"
+        }
+    ]
+}

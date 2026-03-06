@@ -1,12 +1,12 @@
-import { minimatch } from 'minimatch'
 import * as vscode from 'vscode'
 import { Finding } from '../types'
+import { fileMatchesPatterns } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
 
 
 export class AgentsAnalyzer extends StaticAnalyzer {
 
-    public static readonly AGENTS_FILE_NAMES = [
+    public static AGENTS_FILE_NAMES = [
         "CLAUDE.md",
         ".github/copilot-instructions.md",
         ".github/instructions/*.instructions.md",
@@ -20,9 +20,7 @@ export class AgentsAnalyzer extends StaticAnalyzer {
     }
 
     static isAgentFile(uri: vscode.Uri): boolean {
-        const relativePath = vscode.workspace.asRelativePath(uri, false)
-
-        return AgentsAnalyzer.AGENTS_FILE_NAMES.some(pattern => minimatch(relativePath, pattern, { debug: true, }) === true)
+        return fileMatchesPatterns(uri, AgentsAnalyzer.AGENTS_FILE_NAMES)
 
     }
 

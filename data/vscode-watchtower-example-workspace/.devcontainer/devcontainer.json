@@ -1,0 +1,18 @@
+{
+    "image": "mcr.microsoft.com/devcontainers/typescript-node:latest",
+    "customizations": {
+        "vscode": {
+            "mcp": {
+                "servers": {
+                    "playwright": {
+                        "command": "npx",
+                        "args": [
+                            "-y",
+                            "@microsoft/mcp-server-playwright"
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}

@@ -9,6 +9,7 @@
   "categories": [
     "Other"
   ],
+  "publisher": "luisfontes19",
   "keywords": [
     "security",
     "scanner",
@@ -28,12 +29,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/luisfontes19/watchtower.git"
   },
   "bugs": {
-    "url": ""
+    "url": "https://github.com/luisfontes19/watchtower/issues"
   },
-  "homepage": "",
+  "homepage": "https://github.com/luisfontes19/watchtower",
   "author": {
     "name": "Luis Fontes"
   },
@@ -55,6 +56,24 @@
           "type": "boolean",
           "default": true,
           "description": "Enable automatic security scans when opening workspaces"
+        },
+        "watchtower.inlineFindings": {
+          "type": "string",
+          "description": "Control the display of inline findings in the editor",
+          "options": [
+            {
+              "value": "all",
+              "description": "Show inline findings for all issues detected by Watchtower"
+            },
+            {
+              "value": "invisible",
+              "description": "Show inline findings only for invisible code issues"
+            },
+            {
+              "value": "none",
+              "description": "Never show inline findings, only display them in the Problems panel"
+            }
+          ]
         }
       }
     },
@@ -82,12 +101,12 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "pnpm run package",
+    "publish": "pnpm run package && vsce publish --no-dependencies",
     "compile": "pnpm run check-types && node esbuild.js",
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "pnpm run check-types && node esbuild.js --production",
+    "package": "pnpm run check-types && node esbuild.js --production && vsce package --no-dependencies",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "rm -rf out && pnpm run compile-tests && pnpm run compile",

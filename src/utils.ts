@@ -2,7 +2,6 @@ import { minimatch } from 'minimatch'
 import * as vscode from 'vscode'
 import { SensitiveFiles } from './watchtower'
 
-
 export const isActiveTab = (uri: vscode.Uri) => vscode.window.activeTextEditor?.document.uri.fsPath === uri.fsPath
 
 
@@ -10,7 +9,7 @@ export const isSensitiveFile = (uri: vscode.Uri): boolean => {
     const path = uri.fsPath
     const relativePath = vscode.workspace.asRelativePath(uri, false)
 
-    return SensitiveFiles.some(sensitiveFile => minimatch(relativePath, `${sensitiveFile}`))
+    return SensitiveFiles().some(sensitiveFile => minimatch(relativePath, `${sensitiveFile}`))
 }
 
 export const findFiles = async (pattern: string): Promise<vscode.Uri[]> => {
@@ -29,4 +28,19 @@ export const findFiles = async (pattern: string): Promise<vscode.Uri[]> => {
 
 
     return agentFiles
+}
+
+export const normalizeUri = (uri: vscode.Uri): vscode.Uri => {
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri)
+    if (!workspaceFolder) return uri // should only happen in tests
+    return vscode.Uri.joinPath(workspaceFolder.uri, vscode.workspace.asRelativePath(uri, false))
+}
+
+export const fileMatchesPatterns = (uri: vscode.Uri, patterns: string[]): boolean => {
+    let normalized = vscode.workspace.asRelativePath(normalizeUri(uri), false)
+
+    if (process.env.NODE_ENV === 'test')
+        normalized = normalized.startsWith('/') ? normalized.substring(1) : normalized // since we dont have a workspace, relative file paths will be set in the root
+
+    return patterns.some(pattern => minimatch(normalized, pattern))
 }
