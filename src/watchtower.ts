@@ -151,7 +151,10 @@ export class Watchtower {
             return
         }
 
-        const currentWorkspace = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor?.document.uri!)
+        const activeDocument = vscode.window.activeTextEditor?.document.uri
+        if (!activeDocument) return
+
+        const currentWorkspace = vscode.workspace.getWorkspaceFolder(activeDocument)
         if (!currentWorkspace) return
 
         const activeEditor = vscode.window.activeTextEditor
