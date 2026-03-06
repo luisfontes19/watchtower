@@ -58,6 +58,11 @@
           "default": true,
           "description": "Enable automatic security scans when opening workspaces"
         },
+        "watchtower.runOnlyOnRestrictedWorkspaces": {
+          "type": "boolean",
+          "default": false,
+          "description": "When enabled, Watchtower will only scan projects that are in restricted mode (untrusted workspaces). You can always run manual scans, but real time detections will still be off for trusted workspaces."
+        },
         "watchtower.inlineFindings": {
           "type": "string",
           "description": "Control the display of inline findings in the editor",

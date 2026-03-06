@@ -5,6 +5,8 @@ import * as vscode from 'vscode'
 import { Finding, FindingType } from '../types'
 import { StaticAnalyzer } from './staticAnalyzer'
 
+//https://github.com/nickboucher/trojan-source/
+
 export class InvisibleCodeAnalyzer extends StaticAnalyzer {
 
     // copilot context: The fix narrows to the specific tag character range U+E0000–U+E007F, requires 3+ consecutive chars, and uses a negative lookbehind to skip emoji flag sequences.

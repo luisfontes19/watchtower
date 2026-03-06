@@ -40,6 +40,12 @@ export class Settings {
             .get<boolean>('enableStartupScans', true)
     }
 
+    public runsOnlyOnRestrictedWorkspaces(): boolean {
+        return vscode.workspace
+            .getConfiguration('watchtower')
+            .get<boolean>('runOnlyOnRestrictedWorkspaces', false)
+    }
+
     public getGlobalInlineFindings(): InlineFindingType {
         return vscode.workspace
             .getConfiguration('watchtower')
@@ -51,6 +57,12 @@ export class Settings {
         await vscode.workspace
             .getConfiguration('watchtower')
             .update('enableStartupScans', enabled, vscode.ConfigurationTarget.Global)
+    }
+
+    public async setGlobalOnlyRestrictedMode(enabled: boolean): Promise<void> {
+        await vscode.workspace
+            .getConfiguration('watchtower')
+            .update('runOnlyOnRestrictedWorkspaces', enabled, vscode.ConfigurationTarget.Global)
     }
 
     public async setGlobalInlineFindings(type: InlineFindingType): Promise<void> {
@@ -78,12 +90,18 @@ export class Settings {
 
 
     public shouldRunStartupScanForWorkspace(): boolean {
+        if (this.shouldEnforceRestrictedScanOnlySetting()) return false
         return this.getGlobalStartupScans() && this.getWorkspaceStartupScan()
     }
 
 
     public shouldRunRealtimeScanForWorkspace(): boolean {
+        if (this.shouldEnforceRestrictedScanOnlySetting()) return false
         return this.getGlobalStartupScans() && this.getWorkspaceRealTimeDetection()
+    }
+
+    public shouldEnforceRestrictedScanOnlySetting(): boolean {
+        return this.runsOnlyOnRestrictedWorkspaces() && vscode.workspace.isTrusted
     }
 
 
