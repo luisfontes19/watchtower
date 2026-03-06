@@ -8,9 +8,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: production
     steps:
-      - if: github.event.base_ref != 'refs/heads/main'
-        run: exit -1
 
       - name: Checkout repository
         uses: actions/checkout@v4
