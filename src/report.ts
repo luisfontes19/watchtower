@@ -1,5 +1,199 @@
+import * as fs from 'fs'
+import * as path from 'path'
 import * as vscode from 'vscode'
+import { Settings } from './settings'
 import { Finding } from './types'
+
+export interface ScanSummary {
+    totalFindings: number
+    highFindings: number
+    mediumFindings: number
+    lowFindings: number
+}
+
+/**
+ * Generate scan summary from findings
+ */
+export const generateScanSummary = (findings: Finding[]): ScanSummary => {
+    return {
+        totalFindings: findings.length,
+        highFindings: findings.filter(f => f.priority === 'high').length,
+        mediumFindings: findings.filter(f => f.priority === 'medium').length,
+        lowFindings: findings.filter(f => f.priority === 'low').length
+    }
+}
+
+/**
+ * Show scan results dialog and optionally open the full report panel.
+ */
+export const showScanResults = async (
+    findings: Finding[],
+    settings: Settings,
+    isManual: boolean = false
+): Promise<void> => {
+    const { totalFindings, highFindings, mediumFindings, lowFindings } = generateScanSummary(findings)
+
+    let message = 'Watchtower Scan Complete: '
+
+    if (totalFindings === 0) {
+        message += 'No potential attack vectors found in this workspace \u2705 '
+    } else {
+        message += `Found ${totalFindings} potential attack vector${totalFindings > 1 ? 's' : ''} \u26a0\ufe0f `
+
+        const priorities: string[] = []
+        if (highFindings > 0) priorities.push(`\ud83d\udd34 ${highFindings} high`)
+        if (mediumFindings > 0) priorities.push(`\ud83d\udfe0 ${mediumFindings} medium`)
+        if (lowFindings > 0) priorities.push(`\ud83d\udfe1 ${lowFindings} low`)
+
+        if (priorities.length > 0) {
+            message += ` (${priorities.join(', ')})`
+        }
+    }
+
+    const choice = await vscode.window.showWarningMessage(message, 'Show Report')
+
+    if (choice === 'Show Report') {
+        await showReportPanel(findings, settings)
+    }
+}
+
+/**
+ * Open the full report webview panel with project trust actions.
+ */
+export const showReportPanel = async (
+    findings: Finding[],
+    settings: Settings,
+    partial: boolean = false
+): Promise<void> => {
+    const projectState = settings.getProjectState()
+    const reportHtml = generateHTMLReport(findings, partial, true, projectState)
+    const panel = vscode.window.createWebviewPanel(
+        'watchtowerReport',
+        'Watchtower Security Report',
+        vscode.ViewColumn.One,
+        { enableScripts: true }
+    )
+
+    panel.webview.html = reportHtml
+
+    panel.webview.onDidReceiveMessage(async (message) => {
+        switch (message.command) {
+            case 'disableStartupScan': {
+                const confirm = await vscode.window.showWarningMessage(
+                    'Disabling Startup Scan means Watchtower will no longer automatically scan this workspace when you open it. You can still run scans manually via the command palette.',
+                    { modal: true },
+                    'Disable Startup Scan'
+                )
+                if (confirm === 'Disable Startup Scan') {
+                    await settings.setWorkspaceStartupScan(false)
+                    panel.dispose()
+                }
+                break
+            }
+            case 'enableStartupScan':
+                await settings.setWorkspaceStartupScan(true)
+                panel.dispose()
+                break
+            case 'disableRealTimeScans': {
+                const confirm = await vscode.window.showWarningMessage(
+                    'Disabling Real-Time Protection means Watchtower will no longer monitor file changes in this workspace. New or modified files will not be checked for threats until you run a manual scan.',
+                    { modal: true },
+                    'Disable Real-Time Protection'
+                )
+                if (confirm === 'Disable Real-Time Protection') {
+                    await settings.setWorkspaceRealTimeDetection(false)
+                    panel.dispose()
+                }
+                break
+            }
+            case 'enableRealTimeScans':
+                await settings.setWorkspaceRealTimeDetection(true)
+                panel.dispose()
+                break
+            case 'exportToJSON':
+                await exportToJSON(findings, partial)
+                break
+        }
+    })
+}
+
+/**
+ * Show a save-dialog and export findings as JSON.
+ */
+export const exportToJSON = async (findings: Finding[], partial: boolean): Promise<void> => {
+    try {
+        const saveDialogOptions: vscode.SaveDialogOptions = {
+            defaultUri: vscode.Uri.file('watchtower-report.json'),
+            filters: {
+                'JSON Files': ['json'],
+                'All Files': ['*']
+            },
+            title: 'Save Watchtower Report as JSON'
+        }
+
+        const fileUri = await vscode.window.showSaveDialog(saveDialogOptions)
+        if (!fileUri) return
+
+        const jsonData = generateJSONReport(findings, partial)
+        await fs.promises.writeFile(fileUri.fsPath, jsonData, 'utf8')
+
+        vscode.window.showInformationMessage(
+            `Report exported successfully to ${path.basename(fileUri.fsPath)}`
+        )
+    } catch (error) {
+        vscode.window.showErrorMessage(
+            `Failed to export report: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+    }
+}
+
+/**
+ * Show partial-scan alert and optionally open a report or trigger a full scan.
+ */
+export const showAlerts = async (findings: Finding[]): Promise<void> => {
+    if (findings.length === 0) return
+
+    const highCount = findings.filter(f => f.priority === 'high').length
+    const medCount = findings.filter(f => f.priority === 'medium').length
+    const lowCount = findings.filter(f => f.priority === 'low').length
+
+    const counts: string[] = []
+    if (highCount) counts.push(`\ud83d\udd34 ${highCount} high`)
+    if (medCount) counts.push(`\ud83d\udfe0 ${medCount} medium`)
+    if (lowCount) counts.push(`\ud83d\udfe1 ${lowCount} low`)
+
+    // Group findings by type for a concise summary
+    const byType = new Map<string, Finding[]>()
+    for (const f of findings) {
+        const group = byType.get(f.type) ?? []
+        group.push(f)
+        byType.set(f.type, group)
+    }
+
+    const summary = Array.from(byType.entries()).map(([type, items]) => {
+        const files = [...new Set(items.map(f => f.file).filter(Boolean))]
+        const fileList = files.length ? `: ${files.join(', ')}` : ''
+        return `\u2022 ${type} (${items.length})${fileList}`
+    }).join('\n')
+
+    const message = [
+        `\u26a1 Watchtower \u2014 Partial Scan`,
+        `Detected ${findings.length} issue${findings.length > 1 ? 's' : ''} in recently changed files`,
+        `Priority: ${counts.join(' | ')}`,
+        '',
+        summary,
+    ].join('\n')
+
+    const action = await vscode.window.showErrorMessage(message, 'Show Report', '\ud83d\udd0d Run Full Scan')
+
+    if (action === 'Show Report') {
+        const reportHtml = generateHTMLReport(findings, true)
+        const panel = vscode.window.createWebviewPanel('watchtowerReport', 'Watchtower Partial Scan', vscode.ViewColumn.One, { enableScripts: true })
+        panel.webview.html = reportHtml
+    } else if (action === '\ud83d\udd0d Run Full Scan') {
+        vscode.commands.executeCommand('watchtower.analyze')
+    }
+}
 
 /**
  * Sanitize HTML content to prevent XSS attacks
@@ -64,7 +258,7 @@ export const generateJSONReport = (findings: Finding[], partial: boolean = false
     return JSON.stringify(reportData, null, 2)
 }
 
-export const generateHTMLReport = (findings: Finding[], partial: boolean = false, includeTrustActions: boolean = false, projectState?: { startupScanDisabled: boolean; allScansDisabled: boolean }) => {
+export const generateHTMLReport = (findings: Finding[], partial: boolean = false, includeTrustActions: boolean = false, projectState?: { startupScanDisabled: boolean; realtimeDetectionDisabled: boolean }) => {
     const highCount = findings.filter(f => f.priority === 'high').length
     const medCount = findings.filter(f => f.priority === 'medium').length
     const lowCount = findings.filter(f => f.priority === 'low').length
@@ -167,19 +361,19 @@ export const generateHTMLReport = (findings: Finding[], partial: boolean = false
 /**
  * Generate trust actions HTML section
  */
-export const generateTrustActionsHTML = (projectState?: { startupScanDisabled: boolean; allScansDisabled: boolean }): string => {
+export const generateTrustActionsHTML = (projectState?: { startupScanDisabled: boolean; realtimeDetectionDisabled: boolean }): string => {
     const isRestricted = !vscode.workspace.isTrusted
     const startupScanDisabled = projectState?.startupScanDisabled || false
-    const allScansDisabled = projectState?.allScansDisabled || false
+    const realtimeDetectionDisabled = projectState?.realtimeDetectionDisabled || false
 
     // Determine button states
     const startupButton = startupScanDisabled
         ? { text: 'Enable Startup Scan', action: 'enableStartupScan()', color: '#4caf50' }
         : { text: 'Disable Startup Scan', action: 'disableStartupScan()', color: '#ffa726' }
 
-    const allScansButton = allScansDisabled
-        ? { text: 'Enable All Scans', action: 'enableAllScans()', color: '#4caf50' }
-        : { text: 'Disable All Scans', action: 'disableAllScans()', color: '#f44336' }
+    const allScansButton = realtimeDetectionDisabled
+        ? { text: 'Enable Real-Time Detection', action: 'enableRealTimeScans()', color: '#4caf50' }
+        : { text: 'Disable Real-Time Detection', action: 'disableRealTimeScans()', color: '#f44336' }
 
     let html = `
         <div class="actions" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #333;">
@@ -191,7 +385,7 @@ export const generateTrustActionsHTML = (projectState?: { startupScanDisabled: b
             </div>
             <div style="margin-bottom: 16px; font-size: 0.9em; color: #9e9e9e;">
                 <p style="margin: 4px 0;">• <strong>Startup Scan:</strong> ${startupScanDisabled ? 'Currently disabled' : 'Currently enabled'} - Automatic scans when opening workspace</p>
-                <p style="margin: 4px 0;">• <strong>All Scans:</strong> ${allScansDisabled ? 'Currently disabled' : 'Currently enabled'} - All security monitoring including file change detection</p>
+                <p style="margin: 4px 0;">• <strong>Real-Time Detection:</strong> ${realtimeDetectionDisabled ? 'Currently disabled' : 'Currently enabled'} - File change monitoring</p>
             </div>`
 
     if (!isRestricted) {
@@ -222,12 +416,12 @@ export const generateTrustActionsHTML = (projectState?: { startupScanDisabled: b
                 vscode.postMessage({ command: 'enableStartupScan' });
             }
 
-            function disableAllScans() {
-                vscode.postMessage({ command: 'disableAllScans' });
+            function disableRealTimeScans() {
+                vscode.postMessage({ command: 'disableRealTimeScans' });
             }
 
-            function enableAllScans() {
-                vscode.postMessage({ command: 'enableAllScans' });
+            function enableRealTimeScans() {
+                vscode.postMessage({ command: 'enableRealTimeScans' });
             }
 
             function exportToJSON() {

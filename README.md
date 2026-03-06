@@ -46,6 +46,8 @@ Watchtower automatically detects these threats and provides detailed security re
 - Detects hidden Unicode tag characters (`U+E0000-U+E007F`) used to hide malicious code
 - Protects against steganographic attacks where code is invisible to the human eye
 
+![Invisible Code](./data/features3.jpg)
+
 ### 📋 **Malicious Task Scanner**
 
 Scans `.vscode/tasks.json` for dangerous commands including:

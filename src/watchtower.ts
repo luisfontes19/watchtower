@@ -7,10 +7,10 @@ import { LaunchAnalyzer } from './analyzers/launchFile'
 import { SettingsAnalyzer } from './analyzers/settingsFile'
 import { StaticAnalyzer } from './analyzers/staticAnalyzer'
 import { TaskAnalyzer } from './analyzers/taskFile'
-import { generateHTMLReport } from './report'
-import { Finding } from './types'
+import { showAlerts, showScanResults } from './report'
+import { Settings } from './settings'
+import { Finding, FindingType, InlineFindingType } from './types'
 import { isSensitiveFile } from './utils'
-
 
 export class Watchtower {
     private static instance: Watchtower
@@ -22,12 +22,14 @@ export class Watchtower {
     private taskAnalyzer: TaskAnalyzer
     private settingsAnalyzer: SettingsAnalyzer
     private launchAnalyzer: LaunchAnalyzer
-    private inlineDiagnostics: vscode.DiagnosticCollection
+    private highlightDecorationType: vscode.TextEditorDecorationType
 
     public findings: Finding[] = []
+    private settings: Settings
+    private findingsByFile = new Map<string, Finding[]>()
 
 
-    private constructor() {
+    private constructor(extensionUri: vscode.Uri) {
         this.agentsAnalyzer = new AgentsAnalyzer()
         this.devContainerAnalyzer = new DevContainerAnalyzer()
         this.invisibleCodeAnalyzer = new InvisibleCodeAnalyzer()
@@ -35,59 +37,85 @@ export class Watchtower {
         this.taskAnalyzer = new TaskAnalyzer()
         this.settingsAnalyzer = new SettingsAnalyzer()
         this.launchAnalyzer = new LaunchAnalyzer()
+        this.settings = Settings.getInstance()
 
-        this.inlineDiagnostics = vscode.languages.createDiagnosticCollection('watchtowerFindings')
+
+        const warningEmoji = '❗️'
+        const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-size="12">${warningEmoji}</text></svg>`
+        const gutterIcon = vscode.Uri.parse(`data:image/svg+xml;base64,${Buffer.from(svgIcon).toString('base64')}`)
+
+        this.highlightDecorationType = vscode.window.createTextEditorDecorationType({
+            backgroundColor: 'rgba(255, 166, 0, 0.25)',
+            border: '1px solid rgba(255, 166, 0, 0.6)',
+            borderRadius: '3px',
+            overviewRulerColor: 'rgba(255, 166, 0, 0.8)',
+            overviewRulerLane: vscode.OverviewRulerLane.Center,
+            isWholeLine: false,
+            gutterIconPath: gutterIcon,
+            gutterIconSize: 'contain',
+
+        })
     }
 
 
-    public static getInstance(): Watchtower {
+    public static getInstance(extensionUri?: vscode.Uri): Watchtower {
         if (!Watchtower.instance) {
-            Watchtower.instance = new Watchtower()
+            if (!extensionUri) {
+                throw new Error('Extension URI is required for first initialization')
+            }
+            Watchtower.instance = new Watchtower(extensionUri)
         }
         return Watchtower.instance
     }
 
-    public onWorkspaceTrusted() {
-        vscode.window.showInformationMessage('Workspace is now trusted. You can safely analyze your code.')
-    }
+    public onWorkspaceTrusted() { }
 
-    public async onFileCreated(uri: vscode.Uri, scanLifecycle: any) {
-        // Check if background monitoring should run
-        if (!scanLifecycle.shouldRunBackgroundMonitoring()) {
+    public async onFileCreated(uri: vscode.Uri) {
+        if (!this.settings.shouldRunRealtimeScanForWorkspace()) {
             return
         }
 
         const findings = await this.scanFile(uri, undefined, true)
-        await this.showAlerts(findings)
+        await showAlerts(findings)
     }
 
     public async onFileOpened(e: vscode.TextDocument) {
-        this.scanFile(e.uri, new TextEncoder().encode(e.getText()))
+        await this.scanFile(e.uri, new TextEncoder().encode(e.getText()))
     }
 
-    public async onFileChanged(uri: vscode.Uri, scanLifecycle: any) {
-        // Check if background monitoring should run
-        if (!scanLifecycle.shouldRunBackgroundMonitoring()) {
+    public async onActiveEditorChanged(editor: vscode.TextEditor | undefined) {
+        if (!editor) return
+        const doc = editor.document
+        await this.scanFile(doc.uri, new TextEncoder().encode(doc.getText()))
+
+    }
+
+    public async onFileChanged(uri: vscode.Uri) {
+        if (!this.settings.shouldRunRealtimeScanForWorkspace()) {
             return
         }
 
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri)
-        const path = vscode.Uri.joinPath(workspaceFolder!.uri, vscode.workspace.asRelativePath(uri))
+        const filePath = vscode.Uri.joinPath(workspaceFolder!.uri, vscode.workspace.asRelativePath(uri))
 
-        const findings = await this.scanFile(path, undefined, true)
-        await this.showAlerts(findings)
+        const findings = await this.scanFile(filePath, undefined, true)
+        await showAlerts(findings)
     }
 
     /**
      * Run a full workspace scan and return findings
      */
     public async runScan(): Promise<Finding[]> {
+
         return vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: 'Watchtower - Scanning workspace...',
             cancellable: true
         }, async (progress, token) => {
             const findings: Finding[] = []
+
+
+
 
             progress.report({ increment: 0, message: 'Listing project files...' })
             const files = await vscode.workspace.findFiles('**/*', '**/node_modules/**')
@@ -110,7 +138,7 @@ export class Watchtower {
 
             this.findings = findings
 
-            this.inlineDiagnostics.clear()
+            this.findingsByFile.clear()
             this.setInlineFindings(findings)
 
             return findings
@@ -118,24 +146,73 @@ export class Watchtower {
     }
 
     public setInlineFindings(findings: Finding[]) {
-        for (const finding of findings) {
-            if (finding.range && finding.file) {
-                const uri = vscode.workspace.workspaceFolders ? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, finding.file) : null
-                if (!uri) continue
+        const inlineSetting = this.settings.getGlobalInlineFindings()
+        if (inlineSetting === InlineFindingType.none) {
+            return
+        }
 
-                const diagnostic = new vscode.Diagnostic(finding.range, finding.detail, vscode.DiagnosticSeverity.Warning)
-                diagnostic.source = 'Watchtower'
+        const currentWorkspace = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor?.document.uri!)
+        if (!currentWorkspace) return
 
-                this.inlineDiagnostics.set(uri, [diagnostic])
-            }
+        const activeEditor = vscode.window.activeTextEditor
+        if (!activeEditor) return
+
+        const currentFile = vscode.workspace.asRelativePath(activeEditor.document.uri)
+
+        const decorations: vscode.DecorationOptions[] = findings
+            .filter(f =>
+                f.range
+                && f.file === currentFile
+                && (
+                    inlineSetting === InlineFindingType.all
+                    || (inlineSetting === InlineFindingType.invisible && f.type === FindingType.InvisibleCode)
+                )
+            ).map(f => ({
+                range: f.range!,
+                hoverMessage: new vscode.MarkdownString(`**Watchtower:** ${f.name}\n\n${f.detail}`),
+            }))
+
+        activeEditor.setDecorations(this.highlightDecorationType, decorations)
+
+    }
+
+    public async runInitialScan(): Promise<void> {
+        if (!this.settings.shouldRunStartupScanForWorkspace())
+            return
+
+        const wsfolders = vscode.workspace.workspaceFolders
+        if (!wsfolders || wsfolders.length === 0) return
+
+        const findings = await this.runScan()
+        await showScanResults(findings, this.settings)
+    }
+
+    public async commandRunScan(): Promise<void> {
+        const findings = await this.runScan()
+        await showScanResults(findings, this.settings, true)
+    }
+
+    public async commandDisableStartupScanForWorkspace(): Promise<void> {
+        const confirm = await vscode.window.showWarningMessage(
+            'Disabling Startup Scan means Watchtower will no longer automatically scan this workspace when you open it. You can still run scans manually via the command palette.',
+            { modal: true },
+            'Disable Startup Scan'
+        )
+        if (confirm === 'Disable Startup Scan') {
+            await this.settings.setWorkspaceStartupScan(false)
         }
     }
 
-    public generateHTMLReport(findings: Finding[], partial: boolean = false): string {
-        return generateHTMLReport(findings, partial)
+    public async commandDisableRealTimeDetectionForWorkspace(): Promise<void> {
+        const confirm = await vscode.window.showWarningMessage(
+            'Disabling Real-Time Protection means Watchtower will no longer monitor file changes in this workspace. New or modified files will not be checked for threats until you run a manual scan.',
+            { modal: true },
+            'Disable Real-Time Protection'
+        )
+        if (confirm === 'Disable Real-Time Protection') {
+            await this.settings.setWorkspaceRealTimeDetection(false)
+        }
     }
-
-
 
 
     public getSensitiveFileAnalyzers(uri: vscode.Uri): StaticAnalyzer[] {
@@ -173,6 +250,8 @@ export class Watchtower {
 
     public async scanFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>, fileEdited: boolean = false): Promise<Finding[]> {
         const promises = []
+
+        console.log(`Scanning file: ${uri.fsPath}`)
 
         // Ensure we only read file once, when running on multiple analyzers, as vscode.workspace.fs.readFile can be expensive on large files or remote workspaces
         const ensureFileContent = async (): Promise<Uint8Array> => {
@@ -213,59 +292,24 @@ export class Watchtower {
         const results = await Promise.all(promises)
         const findings = results.flat()
 
-        this.inlineDiagnostics.delete(uri)
-        this.setInlineFindings(findings)
+        this.findingsByFile.delete(uri.toString())
+
+        if (this.isActiveFile(uri))
+            this.setInlineFindings(findings)
 
         return findings
 
     }
 
 
-    public async showAlerts(findings: Finding[]) {
-        if (findings.length === 0) return
+    private isActiveFile(uri: vscode.Uri): boolean {
+        const activeEditor = vscode.window.activeTextEditor
+        if (!activeEditor) return false
 
-        const highCount = findings.filter(f => f.priority === 'high').length
-        const medCount = findings.filter(f => f.priority === 'medium').length
-        const lowCount = findings.filter(f => f.priority === 'low').length
+        const activeFile = vscode.workspace.asRelativePath(activeEditor.document.uri)
+        const targetFile = vscode.workspace.asRelativePath(uri)
 
-        const counts: string[] = []
-        if (highCount) counts.push(`🔴 ${highCount} high`)
-        if (medCount) counts.push(`🟠 ${medCount} medium`)
-        if (lowCount) counts.push(`🟡 ${lowCount} low`)
-
-        // Group findings by type for a concise summary
-        const byType = new Map<string, Finding[]>()
-        for (const f of findings) {
-            const group = byType.get(f.type) ?? []
-            group.push(f)
-            byType.set(f.type, group)
-        }
-
-        const summary = Array.from(byType.entries()).map(([type, items]) => {
-            const files = [...new Set(items.map(f => f.file).filter(Boolean))]
-            const fileList = files.length ? `: ${files.join(', ')}` : ''
-            return `• ${type} (${items.length})${fileList}`
-        }).join('\n')
-
-        const message = [
-            `⚡ Watchtower — Partial Scan`,
-            `Detected ${findings.length} issue${findings.length > 1 ? 's' : ''} in recently changed files`,
-            `Priority: ${counts.join(' | ')}`,
-            '',
-            summary,
-        ].join('\n')
-
-        const action = await vscode.window.showErrorMessage(message, 'Show Report', '🔍 Run Full Scan')
-
-        if (action === 'Show Report') {
-            // Show detailed report - will be handled by ScanLifecycle
-            const reportHtml = this.generateHTMLReport(findings, true)
-            const panel = vscode.window.createWebviewPanel('watchtowerReport', 'Watchtower Partial Scan', vscode.ViewColumn.One, { enableScripts: true })
-            panel.webview.html = reportHtml
-        } else if (action === '🔍 Run Full Scan') {
-            // Trigger manual full scan - will be handled by caller
-            vscode.commands.executeCommand('watchtower.analyze')
-        }
+        return activeFile === targetFile
     }
 
 

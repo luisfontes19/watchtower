@@ -60,20 +60,12 @@
         "watchtower.inlineFindings": {
           "type": "string",
           "description": "Control the display of inline findings in the editor",
-          "options": [
-            {
-              "value": "all",
-              "description": "Show inline findings for all issues detected by Watchtower"
-            },
-            {
-              "value": "invisible",
-              "description": "Show inline findings only for invisible code issues"
-            },
-            {
-              "value": "none",
-              "description": "Never show inline findings, only display them in the Problems panel"
-            }
-          ]
+          "enum": [
+            "all",
+            "invisible",
+            "none"
+          ],
+          "default": "invisible"
         }
       }
     },
@@ -83,20 +75,20 @@
         "title": "Watchtower: Scan Workspace"
       },
       {
-        "command": "watchtower.enableProjectStartupScan",
-        "title": "Watchtower: Enable Project Startup Scan"
+        "command": "watchtower.enableWorkspaceStartupScan",
+        "title": "Watchtower: Enable Workspace Startup Scan"
       },
       {
-        "command": "watchtower.disableProjectStartupScan",
-        "title": "Watchtower: Disable Project Startup Scan"
+        "command": "watchtower.disableWorkspaceStartupScan",
+        "title": "Watchtower: Disable Workspace Startup Scan"
       },
       {
-        "command": "watchtower.enableProjectBackgroundProtections",
-        "title": "Watchtower: Enable Project Background Protections"
+        "command": "watchtower.enableWorkspaceRealTimeDetection",
+        "title": "Watchtower: Enable Workspace Real-Time Protections. Will monitor for file changes and perform automatic scans"
       },
       {
-        "command": "watchtower.disableBackgroundProtections",
-        "title": "Watchtower: Disable Project Background Protections"
+        "command": "watchtower.disableWorkspaceRealTimeDetection",
+        "title": "Watchtower: Disable Workspace Real-Time Detection. Will not perform scans"
       }
     ]
   },
