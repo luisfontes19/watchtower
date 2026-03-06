@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@types/minimatch':
-        specifier: ^6.0.0
-        version: 6.0.0
       isbinaryfile:
         specifier: ^6.0.0
         version: 6.0.0
@@ -21,6 +18,9 @@ importers:
         specifier: ^10.2.4
         version: 10.2.4
     devDependencies:
+      '@types/minimatch':
+        specifier: ^6.0.0
+        version: 6.0.0
       '@types/mocha':
         specifier: ^10.0.10
         version: 10.0.10
