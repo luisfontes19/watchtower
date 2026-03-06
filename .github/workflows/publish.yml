@@ -17,6 +17,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Install dependencies
         run: pnpm ci
 
