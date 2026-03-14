@@ -33,7 +33,7 @@ export class SettingsAnalyzer extends StaticAnalyzer {
                 const currentPath = path ? `${path}.${key}` : key
                 if (key.toLowerCase().includes('interpreterpath')) {
                     findings.push({
-                        type: FindingType.BinaryChange,
+                        type: FindingType.Binary,
                         name: `Custom Interpreter Path defined in ${vscode.workspace.asRelativePath(uri)}`,
                         detail: `Setting "${currentPath}" points to a custom interpreter path: "${value}". This could be an attempt to execute arbitrary binaries.`,
                         priority: 'high',

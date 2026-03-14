@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.1.5]
+
+* Add analyzer for python virtual environments in the project
+
 ## [0.1.4]
 
 * Fixed bug that showed an alert everytime most of the files were edited in the background, even if there wasn't anything to report. Now we only report files edited in the background if:

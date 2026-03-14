@@ -5,10 +5,10 @@ export enum FindingType {
     JsonSchema = "Suspicious JSON Schema",
     SilentFileChange = "Silent File Change",
     McpServer = "MCP Server",
-    BinaryChange = "Binary Change",
+    Binary = "Binary",
     InvisibleCode = "Invisible Code",
     AutoApprove = "AI Auto-Approve",
-    PreinstallScript = "Preinstall Script"
+    PreinstallScript = "Preinstall Script",
 }
 
 export interface Finding {

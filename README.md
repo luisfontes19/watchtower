@@ -118,17 +118,6 @@ Once enabled, Watchtower continuously monitors for:
 
 Need to run a fresh scan? Use the Command Palette (`Ctrl+Shift+P`) and run **`Watchtower: Scan Workspace`** anytime.
 
-## 🎯 What Watchtower Scans
-
-| File Type | Security Checks |
-|-----------|----------------|
-| `.vscode/tasks.json` | Malicious commands, network requests, shell execution |
-| `.vscode/settings.json` | Custom interpreter paths, AI auto-approval, dangerous settings |
-| `.vscode/launch.json` | Suspicious launch configurations and pre-launch tasks |
-| `.devcontainer/devcontainer.json` | Container security configurations |
-| `**/*.json` | JSON schema validation and suspicious patterns |
-| AI related files | Markdown instruction files |
-
 ## � When to Use Watchtower
 
 - **Before trusting any repository** - Scan unknown projects before working on them
