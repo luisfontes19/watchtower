@@ -7,7 +7,7 @@ import { StaticAnalyzer } from './staticAnalyzer'
 
 export class SettingsAnalyzer extends StaticAnalyzer {
 
-    alertOnBackgroundEdited(): boolean {
+    alertOnEditedInBackground(): boolean {
         return true
     }
 

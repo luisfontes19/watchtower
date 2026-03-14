@@ -14,7 +14,7 @@ class TestStaticAnalyzer extends StaticAnalyzer {
         return true
     }
 
-    alertOnBackgroundEdited(): boolean {
+    alertOnEditedInBackground(): boolean {
         return true
     }
 }

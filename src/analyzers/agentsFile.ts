@@ -13,7 +13,7 @@ export class AgentsAnalyzer extends StaticAnalyzer {
         ".agents/**/SKILL.md"
     ]
 
-    alertOnBackgroundEdited(): boolean {
+    alertOnEditedInBackground(): boolean {
         return true
     }
 

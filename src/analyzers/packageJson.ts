@@ -5,7 +5,7 @@ import { Finding, FindingType } from '../types'
 import { StaticAnalyzer } from './staticAnalyzer'
 
 export class PackageJsonAnalyzer extends StaticAnalyzer {
-    alertOnBackgroundEdited(): boolean {
+    alertOnEditedInBackground(): boolean {
         return false
     }
 

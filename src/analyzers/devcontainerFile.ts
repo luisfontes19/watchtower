@@ -5,8 +5,8 @@ import { StaticAnalyzer } from './staticAnalyzer'
 
 export class DevContainerAnalyzer extends StaticAnalyzer {
 
-    alertOnBackgroundEdited(): boolean {
-        return true
+    alertOnEditedInBackground(): boolean {
+        return false
     }
 
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {

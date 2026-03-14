@@ -8,9 +8,10 @@ const MAX_PARAM_COUNT = 10
 
 export class JsonFile extends StaticAnalyzer {
 
-    alertOnBackgroundEdited(): boolean {
-        return true
+    alertOnEditedInBackground(): boolean {
+        return false
     }
+
     canScanFile(uri: vscode.Uri): boolean {
         return uri.fsPath.endsWith('.json')
     }

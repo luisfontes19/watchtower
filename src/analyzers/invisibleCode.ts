@@ -9,7 +9,7 @@ import { StaticAnalyzer } from './staticAnalyzer'
 
 export class InvisibleCodeAnalyzer extends StaticAnalyzer {
 
-    alertOnBackgroundEdited(): boolean {
+    alertOnEditedInBackground(): boolean {
         return false
     }
 
