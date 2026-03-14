@@ -1,32 +1,20 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 
+import { isDangerousCommand } from '../dangerousCommands'
 import { Finding, FindingType, Task } from '../types'
 import { StaticAnalyzer } from './staticAnalyzer'
-export const SUSPICIOUS_COMMANDS = [
-    /\bcurl\b/i,
-    /\bwget\b/i,
-    /\bInvoke-WebRequest\b/i,
-    /\bpowershell\b/i,
-    /\bcmd\b/i,
-    /\bbash\b/i,
-    /\bsh\b/i,
-    /\bbase64\b/i,
-    /\bcertutil\b/i,
-    /\bftp\b/i,
-    /\btelnet\b/i,
-    /\bnetcat\b/i,
-    /\bnc\b/i,
-    /\bperl\b/i,
-    /\bpython\b/i,
-    /\bruby\b/i,
-    /\bphp\b/i,
-    /\bnode\b/i,
-    /\bnpm\b/i,
-    /\bpwsh\b/i,
-]
 
 export class TaskAnalyzer extends StaticAnalyzer {
+
+    alertOnBackgroundEdited(): boolean {
+        return true
+    }
+
+
+    canScanFile(uri: vscode.Uri): boolean {
+        return uri.fsPath.endsWith('.vscode/tasks.json')
+    }
 
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         if (!content)
@@ -52,7 +40,7 @@ export class TaskAnalyzer extends StaticAnalyzer {
         let data: any = { command: undefined, presentation: undefined, runOnFolderOpen: false, score: 0 }
 
         const cmd = TaskAnalyzer.getFullCommand(task)
-        if (TaskAnalyzer.isSuspiciousCommand(cmd ?? ''))
+        if (isDangerousCommand(cmd ?? ''))
             data = { ...data, command: cmd, score: data.score + 3 }
 
         if (TaskAnalyzer.hidingPresentationScore(task) >= 3)
@@ -86,10 +74,6 @@ export class TaskAnalyzer extends StaticAnalyzer {
             priority,
             file: vscode.workspace.asRelativePath(uri),
         }
-    }
-
-    private static isSuspiciousCommand(command: string): boolean {
-        return SUSPICIOUS_COMMANDS.some((regex) => regex.test(command))
     }
 
     private runsOnFolderOpen(task: Task): boolean {

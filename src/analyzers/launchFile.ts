@@ -5,6 +5,14 @@ import { StaticAnalyzer } from './staticAnalyzer'
 
 export class LaunchAnalyzer extends StaticAnalyzer {
 
+    alertOnBackgroundEdited(): boolean {
+        return true
+    }
+
+    canScanFile(uri: vscode.Uri): boolean {
+        return uri.fsPath.endsWith('.vscode/launch.json')
+    }
+
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         const findings: Finding[] = []
 

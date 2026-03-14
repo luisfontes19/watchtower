@@ -9,6 +9,14 @@ class TestStaticAnalyzer extends StaticAnalyzer {
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         return []
     }
+
+    canScanFile(uri: vscode.Uri): boolean {
+        return true
+    }
+
+    alertOnBackgroundEdited(): boolean {
+        return true
+    }
 }
 
 suite('StaticAnalyzer', () => {
@@ -49,7 +57,7 @@ suite('StaticAnalyzer', () => {
             // Mock editedInBackground to return false
             analyzer.editedInBackground = () => false
 
-            const findings = await analyzer.sensitiveFileBackgroundEditCheck(fakeUri)
+            const findings = await analyzer.runBackgroundEditedCheck(fakeUri)
             assert.strictEqual(findings.length, 0)
         })
 
@@ -57,7 +65,7 @@ suite('StaticAnalyzer', () => {
             // Mock editedInBackground to return true
             analyzer.editedInBackground = () => true
 
-            const findings = await analyzer.sensitiveFileBackgroundEditCheck(fakeUri)
+            const findings = await analyzer.runBackgroundEditedCheck(fakeUri)
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].type, FindingType.SilentFileChange)
             assert.ok(findings[0].name.includes('Sensitive file'))
@@ -72,7 +80,7 @@ suite('StaticAnalyzer', () => {
             // Mock editedInBackground to return true
             analyzer.editedInBackground = () => true
 
-            const findings = await analyzer.sensitiveFileBackgroundEditCheck(agentUri)
+            const findings = await analyzer.runBackgroundEditedCheck(agentUri)
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].type, FindingType.SilentFileChange)
             assert.ok(findings[0].name.includes('Sensitive file'))
@@ -88,7 +96,7 @@ suite('StaticAnalyzer', () => {
             // Mock editedInBackground to return true
             analyzer.editedInBackground = () => true
 
-            const findings = await analyzer.sensitiveFileBackgroundEditCheck(instructionUri)
+            const findings = await analyzer.runBackgroundEditedCheck(instructionUri)
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].type, FindingType.SilentFileChange)
             assert.ok(findings[0].detail.includes('AI related file'))
@@ -100,7 +108,7 @@ suite('StaticAnalyzer', () => {
             // Mock editedInBackground to return true
             analyzer.editedInBackground = () => true
 
-            const findings = await analyzer.sensitiveFileBackgroundEditCheck(agentsUri)
+            const findings = await analyzer.runBackgroundEditedCheck(agentsUri)
 
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].type, FindingType.SilentFileChange)
@@ -121,7 +129,7 @@ suite('StaticAnalyzer', () => {
 
             for (const filePath of testFiles) {
                 const uri = vscode.Uri.file(filePath)
-                const findings = await analyzer.sensitiveFileBackgroundEditCheck(uri)
+                const findings = await analyzer.runBackgroundEditedCheck(uri)
                 assert.strictEqual(findings.length, 1)
                 assert.strictEqual(findings[0].type, FindingType.SilentFileChange)
                 assert.strictEqual(findings[0].file, uri.fsPath)

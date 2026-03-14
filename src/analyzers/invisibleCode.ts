@@ -9,6 +9,10 @@ import { StaticAnalyzer } from './staticAnalyzer'
 
 export class InvisibleCodeAnalyzer extends StaticAnalyzer {
 
+    alertOnBackgroundEdited(): boolean {
+        return false
+    }
+
     // copilot context: The fix narrows to the specific tag character range U+E0000–U+E007F, requires 3+ consecutive chars, and uses a negative lookbehind to skip emoji flag sequences.
     public static readonly INVISIBLE_PATTERN = /(?<!\u{1F3F4}[\u{E0000}-\u{E007F}]*)([\u{E0000}-\u{E007F}]{3,})/ug
     public static readonly TROJAN_SOURCE = /\u202E|\u202D|\u2067|\u2066|\u2069|\u202C|\u2068/ug
@@ -64,6 +68,10 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
                 range: this.rangeFromMatch(text, match)
             } as Finding
         })
+    }
+
+    canScanFile(uri: vscode.Uri): boolean {
+        return true // we want to scan all files for invisible code, as it can be hidden anywhere
     }
 
     private rangeFromMatch(text: string, match: RegExpMatchArray): vscode.Range {

@@ -7,8 +7,8 @@ export enum FindingType {
     McpServer = "MCP Server",
     BinaryChange = "Binary Change",
     InvisibleCode = "Invisible Code",
-    AutoApprove = "AI Auto-Approve"
-
+    AutoApprove = "AI Auto-Approve",
+    PreinstallScript = "Preinstall Script"
 }
 
 export interface Finding {

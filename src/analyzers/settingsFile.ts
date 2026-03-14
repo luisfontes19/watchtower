@@ -1,10 +1,19 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
+import { SUSPICIOUS_COMMANDS } from '../dangerousCommands'
 import { Finding, FindingType } from '../types'
 import { StaticAnalyzer } from './staticAnalyzer'
-import { SUSPICIOUS_COMMANDS } from './taskFile'
+
 
 export class SettingsAnalyzer extends StaticAnalyzer {
+
+    alertOnBackgroundEdited(): boolean {
+        return true
+    }
+
+    canScanFile(uri: vscode.Uri): boolean {
+        return uri.fsPath.endsWith('.vscode/settings.json')
+    }
 
     // would be nice to detect changes to:
     //      chat.tools.autoApprove

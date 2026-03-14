@@ -3,10 +3,11 @@ import { Finding, FindingType } from '../types'
 import { AgentsAnalyzer } from './agentsFile'
 
 export abstract class StaticAnalyzer {
-    async sensitiveFileBackgroundEditCheck(uri: vscode.Uri): Promise<Finding[]> {
+
+    async runBackgroundEditedCheck(uri: vscode.Uri): Promise<Finding[]> {
         const findings: Finding[] = []
 
-        if (this.editedInBackground(uri)) {
+        if (this.alertOnBackgroundEdited() && this.editedInBackground(uri)) {
 
             let detail = `A file that is deemed sensitive was modified while not being the active editor tab, this indicates that it was edited by some kind of background process, since it's consider a sensitive file it is recommended to investigate this change to make sure it was legitimate`
             let priority = "low"
@@ -28,7 +29,15 @@ export abstract class StaticAnalyzer {
 
     }
 
+
+    // Checks a file for findings
     abstract checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]>
+
+    // If the provided uri is to be scanned by this analyzer
+    abstract canScanFile(uri: vscode.Uri): boolean
+
+    // if the file was edited in the background
+    abstract alertOnBackgroundEdited(): boolean
 
     editedInBackground(uri: vscode.Uri): boolean {
         const activeEditor = vscode.window.activeTextEditor

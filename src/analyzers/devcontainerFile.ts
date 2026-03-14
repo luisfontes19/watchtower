@@ -5,6 +5,10 @@ import { StaticAnalyzer } from './staticAnalyzer'
 
 export class DevContainerAnalyzer extends StaticAnalyzer {
 
+    alertOnBackgroundEdited(): boolean {
+        return true
+    }
+
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         const findings: Finding[] = []
         const data = content ?? await vscode.workspace.fs.readFile(uri)
@@ -12,6 +16,10 @@ export class DevContainerAnalyzer extends StaticAnalyzer {
         findings.push(...this.checkMcpServers(json, uri))
 
         return findings
+    }
+
+    canScanFile(uri: vscode.Uri): boolean {
+        return uri.fsPath.endsWith('.devcontainer/devcontainer.json')
     }
 
     checkMcpServers(json: Record<string, unknown>, uri: vscode.Uri): Finding[] {

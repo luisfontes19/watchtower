@@ -10,33 +10,30 @@ import { TaskAnalyzer } from './analyzers/taskFile'
 import { showAlerts, showScanResults } from './report'
 import { Settings } from './settings'
 import { Finding, FindingType, InlineFindingType } from './types'
-import { isSensitiveFile } from './utils'
 
 export class Watchtower {
     private static instance: Watchtower
 
-    private agentsAnalyzer: AgentsAnalyzer
-    private devContainerAnalyzer: DevContainerAnalyzer
-    private invisibleCodeAnalyzer: InvisibleCodeAnalyzer
-    private jsonFileAnalyzer: JsonFile
-    private taskAnalyzer: TaskAnalyzer
-    private settingsAnalyzer: SettingsAnalyzer
-    private launchAnalyzer: LaunchAnalyzer
     private highlightDecorationType: vscode.TextEditorDecorationType
 
     public findings: Finding[] = []
     private settings: Settings
-    private findingsByFile = new Map<string, Finding[]>()
 
+
+    private allAnalyzers: StaticAnalyzer[]
 
     private constructor(extensionUri: vscode.Uri) {
-        this.agentsAnalyzer = new AgentsAnalyzer()
-        this.devContainerAnalyzer = new DevContainerAnalyzer()
-        this.invisibleCodeAnalyzer = new InvisibleCodeAnalyzer()
-        this.jsonFileAnalyzer = new JsonFile()
-        this.taskAnalyzer = new TaskAnalyzer()
-        this.settingsAnalyzer = new SettingsAnalyzer()
-        this.launchAnalyzer = new LaunchAnalyzer()
+
+        this.allAnalyzers = [
+            new AgentsAnalyzer(),
+            new DevContainerAnalyzer(),
+            new InvisibleCodeAnalyzer(),
+            new JsonFile(),
+            new TaskAnalyzer(),
+            new SettingsAnalyzer(),
+            new LaunchAnalyzer(),
+        ]
+
         this.settings = Settings.getInstance()
 
 
@@ -138,7 +135,7 @@ export class Watchtower {
 
             this.findings = findings
 
-            this.findingsByFile.clear()
+
             this.setInlineFindings(findings)
 
             return findings
@@ -217,42 +214,7 @@ export class Watchtower {
         }
     }
 
-
-    public getSensitiveFileAnalyzers(uri: vscode.Uri): StaticAnalyzer[] {
-        if (!isSensitiveFile(uri)) return []
-
-
-        const path = uri.fsPath
-
-        const analyzers: StaticAnalyzer[] = []
-
-        if (path.endsWith('.vscode/settings.json'))
-            analyzers.push(this.settingsAnalyzer)
-
-        if (path.endsWith('.devcontainer/devcontainer.json'))
-            analyzers.push(this.devContainerAnalyzer)
-
-        if (path.endsWith('.json'))
-            analyzers.push(this.jsonFileAnalyzer)
-
-        if (path.endsWith('.vscode/tasks.json'))
-            analyzers.push(this.taskAnalyzer)
-
-        if (path.endsWith('.vscode/launch.json'))
-            analyzers.push(this.launchAnalyzer)
-
-        if (path.endsWith('.md') && AgentsAnalyzer.isAgentFile(uri))
-            analyzers.push(this.agentsAnalyzer)
-
-        if (analyzers.length === 0) {
-            throw new Error(`File ${uri.fsPath} is marked as sensitive but no analyzer found. Check the file patterns in getSensitiveFileAnalyzers and ensure they match the patterns in SensitiveFiles.`)
-        }
-
-        return analyzers
-    }
-
     public async scanFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>, fileEdited: boolean = false): Promise<Finding[]> {
-        const promises = []
 
         console.log(`Scanning file: ${uri.fsPath}`)
 
@@ -263,39 +225,18 @@ export class Watchtower {
             return data
         }
 
-        if (uri.fsPath.endsWith('.vscode/settings.json'))
-            promises.push(this.settingsAnalyzer.checkFile(uri, await ensureFileContent()))
 
-        if (uri.fsPath.endsWith('.devcontainer/devcontainer.json'))
-            promises.push(this.devContainerAnalyzer.checkFile(uri, await ensureFileContent()))
+        const analyzersForFile = this.allAnalyzers.filter(a => a.canScanFile(uri))
+        const fileChecks = analyzersForFile.map(a => a.checkFile(uri, content))
+        const backgroundChecks = fileEdited ? analyzersForFile.map(a => a.runBackgroundEditedCheck(uri)) : []
 
-
-        if (uri.fsPath.endsWith('.json'))
-            promises.push(this.jsonFileAnalyzer.checkFile(uri, await ensureFileContent()))
-
-        if (uri.fsPath.endsWith('.vscode/tasks.json'))
-            promises.push(this.taskAnalyzer.checkFile(uri, await ensureFileContent()))
-
-        if (uri.fsPath.endsWith('.md'))
-            promises.push(this.agentsAnalyzer.checkFile(uri, await ensureFileContent()))
-
-        if (uri.fsPath.endsWith('.vscode/launch.json'))
-            promises.push(this.launchAnalyzer.checkFile(uri, await ensureFileContent()))
-
-
-        if (fileEdited) {
-            const analyzers = this.getSensitiveFileAnalyzers(uri)
-            for (const analyzer of analyzers) {
-                promises.push(analyzer.sensitiveFileBackgroundEditCheck(uri))
-            }
-        }
-
-        promises.push(this.invisibleCodeAnalyzer.checkFile(uri, await ensureFileContent()))
+        const promises = [
+            ...fileChecks,
+            ...backgroundChecks
+        ]
 
         const results = await Promise.all(promises)
         const findings = results.flat()
-
-        this.findingsByFile.delete(uri.toString())
 
         if (this.isActiveFile(uri))
             this.setInlineFindings(findings)

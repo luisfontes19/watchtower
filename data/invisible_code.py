@@ -9,7 +9,7 @@ def encode_to_invisible(visible_text: str) -> str:
 
 
 
-print("'" + encode_to_invisible("Lorem ipsum tempor quis aute sed exercitation et officia elit et minim culpa ad in mollit nulla esse sint tempor incididunt excepteur dolor mollit sit ut consequat ullamco ex pariatur ") + "'")
+print("'" + encode_to_invisible("requests.get(\"http://example.com\")") + "'")
 
 def decode_from_invisible(invisible_text: str) -> str:
     """Decodes a sequence of invisible Unicode tag characters back to a visible string."""

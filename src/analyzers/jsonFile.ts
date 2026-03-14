@@ -8,6 +8,13 @@ const MAX_PARAM_COUNT = 10
 
 export class JsonFile extends StaticAnalyzer {
 
+    alertOnBackgroundEdited(): boolean {
+        return true
+    }
+    canScanFile(uri: vscode.Uri): boolean {
+        return uri.fsPath.endsWith('.json')
+    }
+
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         const findings: Finding[] = []
         const data = content ?? await vscode.workspace.fs.readFile(uri)
