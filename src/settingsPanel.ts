@@ -14,11 +14,11 @@ export function showSettingsPanel() {
 
     const startupScansMode = settings.getGlobalStartupScans()
     const inlineFindings = settings.getGlobalInlineFindings()
-    const workspaceStartup = settings.getWorkspaceStartupScan()
-    const workspaceRealTime = settings.getWorkspaceRealTimeDetection()
+    const workspaceStartup = settings.shouldRunStartupScanForWorkspace()
+    const workspaceRealTime = settings.shouldRunRealtimeScanForWorkspace()
     const isTrusted = vscode.workspace.isTrusted
-    const restrictedEnforced = settings.shouldEnforceRestrictedScanOnlySetting()
-    const projectOverridesGlobal = settings.hasAnyExplicitProjectSetting()
+    const hasProjectOverride = settings.hasExplicitProjectSetting('runStartupScan') || settings.hasExplicitProjectSetting('runRealTimeDetection')
+    const restrictedEnforced = !hasProjectOverride && startupScansMode === StartupScansMode.onUntrusted && isTrusted
 
     const workspaceName = vscode.workspace.workspaceFolders?.[0]?.name ?? 'No workspace'
 
@@ -30,7 +30,7 @@ export function showSettingsPanel() {
         workspaceName,
         isTrusted,
         restrictedEnforced,
-        projectOverridesGlobal,
+        projectOverridesGlobal: hasProjectOverride,
     })
 }
 

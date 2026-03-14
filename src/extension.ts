@@ -26,14 +26,6 @@ export function activate(context: vscode.ExtensionContext) {
 	commands.forEach(command => context.subscriptions.push(command))
 
 
-
-	// If startup scans are off globally and no project overrides, skip all automatic scanning
-	if (settings.shouldEnforceRestrictedScanOnlySetting()) {
-		console.log('Watchtower: startupScans is set to OnUntrusted and workspace is trusted — skipping scans')
-		return
-	}
-
-
 	/////////////////////////////
 	// Real-time file listeners
 	/////////////////////////////
@@ -48,13 +40,14 @@ export function activate(context: vscode.ExtensionContext) {
 		watcher
 	]
 
-	realTimeListeners.forEach(listener => context.subscriptions.push(listener))
+	if (settings.shouldRunRealtimeScanForWorkspace()) {
+		realTimeListeners.forEach(listener => context.subscriptions.push(listener))
+	}
 
 
 	context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(() => {
-		// if user only wants scans on untrusted workspaces, and they just granted trust, dispose real-time listeners
 		console.log("Workspace trust granted")
-		if (settings.shouldEnforceRestrictedScanOnlySetting()) {
+		if (!settings.shouldRunRealtimeScanForWorkspace()) {
 			console.log("Disposing real time listeners due to workspace trust change")
 			realTimeListeners.forEach(listener => listener.dispose())
 		}
@@ -63,6 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	watchtower.runInitialScan()
+
 
 	if (vscode.window.activeTextEditor)
 		watchtower.onActiveEditorChanged(vscode.window.activeTextEditor)

@@ -81,44 +81,30 @@ export class Settings {
         return this.workspaceStorage.get(this.workspaceKey(setting)) !== undefined
     }
 
-    public hasAnyExplicitProjectSetting(): boolean {
-        return this.hasExplicitProjectSetting('runStartupScan') || this.hasExplicitProjectSetting('runRealTimeDetection')
-    }
-
     public shouldRunStartupScanForWorkspace(): boolean {
-        // Project settings override global settings
-        if (this.hasExplicitProjectSetting('runStartupScan')) {
-            return this.getWorkspaceStartupScan()
-        }
+        if (this.hasExplicitProjectSetting('runStartupScan')) return this.getWorkspaceStartupScan()
+
+
         const mode = this.getGlobalStartupScans()
         if (mode === StartupScansMode.off) return false
-        if (mode === StartupScansMode.onUntrusted && vscode.workspace.isTrusted) return false
-        return true
+        if (mode === StartupScansMode.onUntrusted && vscode.workspace.isTrusted)
+            return false
+
+        return this.getWorkspaceStartupScan()
     }
 
 
     public shouldRunRealtimeScanForWorkspace(): boolean {
-        // Project settings override global settings
-        if (this.hasExplicitProjectSetting('runRealTimeDetection')) {
+        if (this.hasExplicitProjectSetting('runRealTimeDetection'))
             return this.getWorkspaceRealTimeDetection()
-        }
+
+
         const mode = this.getGlobalStartupScans()
         if (mode === StartupScansMode.off) return false
         if (mode === StartupScansMode.onUntrusted) return false
-        return true
+
+        return this.getWorkspaceRealTimeDetection()
     }
-
-    public shouldEnforceRestrictedScanOnlySetting(): boolean {
-        if (this.hasAnyExplicitProjectSetting()) return false
-        const mode = this.getGlobalStartupScans()
-        return mode === StartupScansMode.onUntrusted && vscode.workspace.isTrusted
-    }
-
-
-    public shouldShowInlineFindings(): boolean {
-        return this.getGlobalInlineFindings() !== InlineFindingType.none
-    }
-
 
     public getProjectState(): { startupScanDisabled: boolean; realtimeDetectionDisabled: boolean } {
         return {
