@@ -10,13 +10,12 @@ export class PackageJsonAnalyzer extends StaticAnalyzer {
     }
 
     canScanFile(uri: vscode.Uri): boolean {
-        return uri.fsPath.endsWith('package.json')
+        return uri.fsPath.endsWith('/package.json')
     }
 
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
-
         const data = content ?? await vscode.workspace.fs.readFile(uri)
-        const json = jsonc.parse(data.toString()) as Record<string, unknown>
+        const json = jsonc.parse(new TextDecoder().decode(data)) as Record<string, unknown>
         return this.checkPackageJson(json, uri)
     }
 
