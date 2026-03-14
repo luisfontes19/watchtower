@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { Settings } from './settings'
+import { showSettingsPanel } from './settingsPanel'
 import { Watchtower } from './watchtower'
 
 
@@ -19,6 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('watchtower.disableWorkspaceRealTimeDetection', watchtower.commandDisableRealTimeDetectionForWorkspace.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.enableWorkspaceStartupScan', () => settings.setWorkspaceStartupScan(true)),
 		vscode.commands.registerCommand('watchtower.enableWorkspaceRealTimeDetection', () => settings.setWorkspaceRealTimeDetection(true)),
+		vscode.commands.registerCommand('watchtower.showSettings', showSettingsPanel),
 	]
 
 	commands.forEach(command => context.subscriptions.push(command))

@@ -60,7 +60,7 @@
         },
         "watchtower.runOnlyOnRestrictedWorkspaces": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "When enabled, Watchtower will only scan projects that are in restricted mode (untrusted workspaces). You can always run manual scans, but real time detections will still be off for trusted workspaces."
         },
         "watchtower.inlineFindings": {
@@ -95,6 +95,10 @@
       {
         "command": "watchtower.disableWorkspaceRealTimeDetection",
         "title": "Watchtower: Disable Workspace Real-Time Detection. Will not perform scans"
+      },
+      {
+        "command": "watchtower.showSettings",
+        "title": "Watchtower: Show Settings Status"
       }
     ]
   },
