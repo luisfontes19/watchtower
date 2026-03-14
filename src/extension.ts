@@ -27,9 +27,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 
-	// If onlyRestrictedMode is on and the workspace is trusted, skip all automatic scanning
+	// If startup scans are off globally and no project overrides, skip all automatic scanning
 	if (settings.shouldEnforceRestrictedScanOnlySetting()) {
-		console.log('Watchtower: runOnlyOnRestrictedWorkspaces is enabled and workspace is trusted — skipping scans')
+		console.log('Watchtower: startupScans is set to OnUntrusted and workspace is trusted — skipping scans')
 		return
 	}
 
@@ -52,9 +52,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(() => {
-		// if user only want scans in restricted workspaces, and they just granted trust to the workspace, we should dispose all real time listeners to stop watching for file changes and opening
+		// if user only wants scans on untrusted workspaces, and they just granted trust, dispose real-time listeners
 		console.log("Workspace trust granted")
-		if (settings.runsOnlyOnRestrictedWorkspaces()) {
+		if (settings.shouldEnforceRestrictedScanOnlySetting()) {
 			console.log("Disposing real time listeners due to workspace trust change")
 			realTimeListeners.forEach(listener => listener.dispose())
 		}

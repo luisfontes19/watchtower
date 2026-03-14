@@ -26,6 +26,12 @@ export enum InlineFindingType {
     none = "none"
 }
 
+export enum StartupScansMode {
+    onEveryProject = "OnEveryProject",
+    onUntrusted = "OnUntrusted",
+    off = "Off"
+}
+
 export interface TaskPresentation {
     reveal?: string        // "always" | "silent" | "never"
     echo?: boolean

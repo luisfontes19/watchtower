@@ -68,35 +68,35 @@ export class Watchtower {
     public onWorkspaceTrusted() { }
 
     public async onFileCreated(uri: vscode.Uri) {
-        if (!this.settings.shouldRunRealtimeScanForWorkspace()) {
-            return
-        }
+        if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
 
         const findings = await this.scanFile(uri, undefined, true)
         await showAlerts(findings)
     }
 
     public async onFileOpened(e: vscode.TextDocument) {
+        if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
+
         await this.scanFile(e.uri, new TextEncoder().encode(e.getText()))
     }
 
-    public async onActiveEditorChanged(editor: vscode.TextEditor | undefined) {
-        if (!editor) return
-        const doc = editor.document
-        await this.scanFile(doc.uri, new TextEncoder().encode(doc.getText()))
-
-    }
-
     public async onFileChanged(uri: vscode.Uri) {
-        if (!this.settings.shouldRunRealtimeScanForWorkspace()) {
-            return
-        }
+        if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
 
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri)
         const filePath = vscode.Uri.joinPath(workspaceFolder!.uri, vscode.workspace.asRelativePath(uri))
 
         const findings = await this.scanFile(filePath, undefined, true)
         await showAlerts(findings)
+    }
+
+    public async onActiveEditorChanged(editor: vscode.TextEditor | undefined) {
+        if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
+
+        if (!editor) return
+        const doc = editor.document
+        await this.scanFile(doc.uri, new TextEncoder().encode(doc.getText()))
+
     }
 
     /**
@@ -110,9 +110,6 @@ export class Watchtower {
             cancellable: true
         }, async (progress, token) => {
             const findings: Finding[] = []
-
-
-
 
             progress.report({ increment: 0, message: 'Listing project files...' })
             const files = await vscode.workspace.findFiles('**/*', '**/node_modules/**')
@@ -225,6 +222,7 @@ export class Watchtower {
             return data
         }
 
+        content = await ensureFileContent()
 
         const analyzersForFile = this.allAnalyzers.filter(a => a.canScanFile(uri))
         const fileChecks = analyzersForFile.map(a => a.checkFile(uri, content))
@@ -258,15 +256,3 @@ export class Watchtower {
 
 
 }
-
-
-
-export const SensitiveFiles = () => [
-    '.devcontainer/devcontainer.json',
-    '.vscode/settings.json',
-    '.vscode/tasks.json',
-    '.vscode/launch.json',
-    '**/*.md',
-    '**/*.json',
-    ...AgentsAnalyzer.AGENTS_FILE_NAMES
-]

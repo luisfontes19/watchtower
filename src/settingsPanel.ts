@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import { Settings } from './settings'
-import { InlineFindingType } from './types'
+import { InlineFindingType, StartupScansMode } from './types'
 
 export function showSettingsPanel() {
     const settings = Settings.getInstance()
@@ -12,8 +12,7 @@ export function showSettingsPanel() {
         { enableScripts: false }
     )
 
-    const globalStartupScans = settings.shouldRunStartupScanForWorkspace() || settings.getWorkspaceStartupScan()
-    const runOnlyRestricted = settings.runsOnlyOnRestrictedWorkspaces()
+    const startupScansMode = settings.getGlobalStartupScans()
     const inlineFindings = settings.getGlobalInlineFindings()
     const workspaceStartup = settings.getWorkspaceStartupScan()
     const workspaceRealTime = settings.getWorkspaceRealTimeDetection()
@@ -21,15 +20,10 @@ export function showSettingsPanel() {
     const restrictedEnforced = settings.shouldEnforceRestrictedScanOnlySetting()
     const projectOverridesGlobal = settings.hasAnyExplicitProjectSetting()
 
-    const globalStartupRaw = vscode.workspace
-        .getConfiguration('watchtower')
-        .get<boolean>('enableStartupScans', true)
-
     const workspaceName = vscode.workspace.workspaceFolders?.[0]?.name ?? 'No workspace'
 
     panel.webview.html = getHtml({
-        globalStartupScans: globalStartupRaw,
-        runOnlyRestricted,
+        startupScansMode,
         inlineFindings,
         workspaceStartup,
         workspaceRealTime,
@@ -41,8 +35,7 @@ export function showSettingsPanel() {
 }
 
 interface SettingsData {
-    globalStartupScans: boolean
-    runOnlyRestricted: boolean
+    startupScansMode: StartupScansMode
     inlineFindings: InlineFindingType
     workspaceStartup: boolean
     workspaceRealTime: boolean
@@ -70,6 +63,17 @@ function inlineBadge(type: InlineFindingType): string {
     }
 }
 
+function startupScansBadge(mode: StartupScansMode): string {
+    switch (mode) {
+        case StartupScansMode.onEveryProject:
+            return `<span class="badge enabled">On Every Project</span>`
+        case StartupScansMode.onUntrusted:
+            return `<span class="badge warning">On Untrusted</span>`
+        case StartupScansMode.off:
+            return `<span class="badge disabled">Off</span>`
+    }
+}
+
 function getHtml(data: SettingsData): string {
     const trustBadge = data.isTrusted
         ? '<span class="badge enabled">Trusted</span>'
@@ -78,7 +82,7 @@ function getHtml(data: SettingsData): string {
     const effectiveNote = data.restrictedEnforced
         ? `<div class="note warning-note">
             <span class="note-icon">⚠️</span>
-            <span>Scans are currently <strong>inactive</strong> because <em>Run Only on Restricted Workspaces</em> is enabled and this workspace is trusted.</span>
+            <span>Scans are currently <strong>inactive</strong> because <em>Startup Scans</em> is set to <em>OnUntrusted</em> and this workspace is trusted.</span>
            </div>`
         : ''
 
@@ -276,18 +280,9 @@ function getHtml(data: SettingsData): string {
             <div class="setting-row">
                 <div>
                     <div class="setting-label">Startup Scans</div>
-                    <div class="setting-desc">Scan workspaces on open</div>
+                    <div class="setting-desc">When to automatically scan workspaces</div>
                 </div>
-                ${badge(data.globalStartupScans)}
-            </div>
-            <div class="setting-row">
-                <div>
-                    <div class="setting-label">Run Only on Restricted Workspaces</div>
-                    <div class="setting-desc">Limit scans to untrusted workspaces</div>
-                </div>
-                ${data.runOnlyRestricted
-                    ? '<span class="badge warning">Enabled</span>'
-                    : '<span class="badge enabled">Disabled</span>'}
+                ${startupScansBadge(data.startupScansMode)}
             </div>
             <div class="setting-row">
                 <div>

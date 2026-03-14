@@ -53,15 +53,20 @@
     "configuration": {
       "title": "Watchtower",
       "properties": {
-        "watchtower.enableStartupScans": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable automatic security scans when opening workspaces"
-        },
-        "watchtower.runOnlyOnRestrictedWorkspaces": {
-          "type": "boolean",
-          "default": true,
-          "description": "When enabled, Watchtower will only scan projects that are in restricted mode (untrusted workspaces). You can always run manual scans, but real time detections will still be off for trusted workspaces."
+        "watchtower.startupScans": {
+          "type": "string",
+          "default": "OnUntrusted",
+          "enum": [
+            "OnEveryProject",
+            "OnUntrusted",
+            "Off"
+          ],
+          "enumDescriptions": [
+            "Run startup and real-time scans on every project",
+            "Only run scans on untrusted (restricted) workspaces",
+            "Disable all automatic scans (manual scans still available)"
+          ],
+          "description": "Control when Watchtower automatically scans workspaces"
         },
         "watchtower.inlineFindings": {
           "type": "string",

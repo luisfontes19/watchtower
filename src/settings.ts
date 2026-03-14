@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { InlineFindingType } from './types'
+import { InlineFindingType, StartupScansMode } from './types'
 
 export class Settings {
     private static instance: Settings
@@ -34,16 +34,10 @@ export class Settings {
     }
 
 
-    private getGlobalStartupScans(): boolean {
+    public getGlobalStartupScans(): StartupScansMode {
         return vscode.workspace
             .getConfiguration('watchtower')
-            .get<boolean>('enableStartupScans', true)
-    }
-
-    public runsOnlyOnRestrictedWorkspaces(): boolean {
-        return vscode.workspace
-            .getConfiguration('watchtower')
-            .get<boolean>('runOnlyOnRestrictedWorkspaces', false)
+            .get<StartupScansMode>('startupScans', StartupScansMode.onUntrusted)
     }
 
     public getGlobalInlineFindings(): InlineFindingType {
@@ -53,16 +47,10 @@ export class Settings {
     }
 
 
-    public async setGlobalStartupScans(enabled: boolean): Promise<void> {
+    public async setGlobalStartupScans(mode: StartupScansMode): Promise<void> {
         await vscode.workspace
             .getConfiguration('watchtower')
-            .update('enableStartupScans', enabled, vscode.ConfigurationTarget.Global)
-    }
-
-    public async setGlobalOnlyRestrictedMode(enabled: boolean): Promise<void> {
-        await vscode.workspace
-            .getConfiguration('watchtower')
-            .update('runOnlyOnRestrictedWorkspaces', enabled, vscode.ConfigurationTarget.Global)
+            .update('startupScans', mode, vscode.ConfigurationTarget.Global)
     }
 
     public async setGlobalInlineFindings(type: InlineFindingType): Promise<void> {
@@ -102,8 +90,10 @@ export class Settings {
         if (this.hasExplicitProjectSetting('runStartupScan')) {
             return this.getWorkspaceStartupScan()
         }
-        if (this.shouldEnforceRestrictedScanOnlySetting()) return false
-        return this.getGlobalStartupScans()
+        const mode = this.getGlobalStartupScans()
+        if (mode === StartupScansMode.off) return false
+        if (mode === StartupScansMode.onUntrusted && vscode.workspace.isTrusted) return false
+        return true
     }
 
 
@@ -112,13 +102,16 @@ export class Settings {
         if (this.hasExplicitProjectSetting('runRealTimeDetection')) {
             return this.getWorkspaceRealTimeDetection()
         }
-        if (this.shouldEnforceRestrictedScanOnlySetting()) return false
-        return this.getGlobalStartupScans()
+        const mode = this.getGlobalStartupScans()
+        if (mode === StartupScansMode.off) return false
+        if (mode === StartupScansMode.onUntrusted) return false
+        return true
     }
 
     public shouldEnforceRestrictedScanOnlySetting(): boolean {
-        if (this.hasExplicitProjectSetting('runStartupScan') || this.hasExplicitProjectSetting('runRealTimeDetection')) return false
-        return this.runsOnlyOnRestrictedWorkspaces() && vscode.workspace.isTrusted
+        if (this.hasAnyExplicitProjectSetting()) return false
+        const mode = this.getGlobalStartupScans()
+        return mode === StartupScansMode.onUntrusted && vscode.workspace.isTrusted
     }
 
 
