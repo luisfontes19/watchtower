@@ -89,18 +89,35 @@ export class Settings {
     }
 
 
+    public hasExplicitProjectSetting(setting: string): boolean {
+        return this.workspaceStorage.get(this.workspaceKey(setting)) !== undefined
+    }
+
+    public hasAnyExplicitProjectSetting(): boolean {
+        return this.hasExplicitProjectSetting('runStartupScan') || this.hasExplicitProjectSetting('runRealTimeDetection')
+    }
+
     public shouldRunStartupScanForWorkspace(): boolean {
+        // Project settings override global settings
+        if (this.hasExplicitProjectSetting('runStartupScan')) {
+            return this.getWorkspaceStartupScan()
+        }
         if (this.shouldEnforceRestrictedScanOnlySetting()) return false
-        return this.getGlobalStartupScans() && this.getWorkspaceStartupScan()
+        return this.getGlobalStartupScans()
     }
 
 
     public shouldRunRealtimeScanForWorkspace(): boolean {
+        // Project settings override global settings
+        if (this.hasExplicitProjectSetting('runRealTimeDetection')) {
+            return this.getWorkspaceRealTimeDetection()
+        }
         if (this.shouldEnforceRestrictedScanOnlySetting()) return false
-        return this.getGlobalStartupScans() && this.getWorkspaceRealTimeDetection()
+        return this.getGlobalStartupScans()
     }
 
     public shouldEnforceRestrictedScanOnlySetting(): boolean {
+        if (this.hasExplicitProjectSetting('runStartupScan') || this.hasExplicitProjectSetting('runRealTimeDetection')) return false
         return this.runsOnlyOnRestrictedWorkspaces() && vscode.workspace.isTrusted
     }
 

@@ -19,6 +19,7 @@ export function showSettingsPanel() {
     const workspaceRealTime = settings.getWorkspaceRealTimeDetection()
     const isTrusted = vscode.workspace.isTrusted
     const restrictedEnforced = settings.shouldEnforceRestrictedScanOnlySetting()
+    const projectOverridesGlobal = settings.hasAnyExplicitProjectSetting()
 
     const globalStartupRaw = vscode.workspace
         .getConfiguration('watchtower')
@@ -35,6 +36,7 @@ export function showSettingsPanel() {
         workspaceName,
         isTrusted,
         restrictedEnforced,
+        projectOverridesGlobal,
     })
 }
 
@@ -47,6 +49,7 @@ interface SettingsData {
     workspaceName: string
     isTrusted: boolean
     restrictedEnforced: boolean
+    projectOverridesGlobal: boolean
 }
 
 function badge(enabled: boolean, label?: string): string {
@@ -76,6 +79,13 @@ function getHtml(data: SettingsData): string {
         ? `<div class="note warning-note">
             <span class="note-icon">⚠️</span>
             <span>Scans are currently <strong>inactive</strong> because <em>Run Only on Restricted Workspaces</em> is enabled and this workspace is trusted.</span>
+           </div>`
+        : ''
+
+    const projectOverrideNote = data.projectOverridesGlobal
+        ? `<div class="note warning-note">
+            <span class="note-icon">ℹ️</span>
+            <span>Project settings are currently <strong>overriding</strong> global settings for this workspace.</span>
            </div>`
         : ''
 
@@ -275,7 +285,9 @@ function getHtml(data: SettingsData): string {
                     <div class="setting-label">Run Only on Restricted Workspaces</div>
                     <div class="setting-desc">Limit scans to untrusted workspaces</div>
                 </div>
-                ${badge(data.runOnlyRestricted)}
+                ${data.runOnlyRestricted
+                    ? '<span class="badge warning">Enabled</span>'
+                    : '<span class="badge enabled">Disabled</span>'}
             </div>
             <div class="setting-row">
                 <div>
@@ -309,6 +321,7 @@ function getHtml(data: SettingsData): string {
                 </div>
             </div>
             ${effectiveNote}
+            ${projectOverrideNote}
         </div>
     </div>
 </body>

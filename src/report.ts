@@ -155,43 +155,16 @@ export const showAlerts = async (findings: Finding[]): Promise<void> => {
 
     const highCount = findings.filter(f => f.priority === 'high').length
     const medCount = findings.filter(f => f.priority === 'medium').length
-    const lowCount = findings.filter(f => f.priority === 'low').length
 
-    const counts: string[] = []
-    if (highCount) counts.push(`\ud83d\udd34 ${highCount} high`)
-    if (medCount) counts.push(`\ud83d\udfe0 ${medCount} medium`)
-    if (lowCount) counts.push(`\ud83d\udfe1 ${lowCount} low`)
+    const highestPriority = highCount > 0 ? '\ud83d\udd34 High' : medCount > 0 ? '\ud83d\udfe0 Medium' : '\ud83d\udfe1 Low'
 
-    // Group findings by type for a concise summary
-    const byType = new Map<string, Finding[]>()
-    for (const f of findings) {
-        const group = byType.get(f.type) ?? []
-        group.push(f)
-        byType.set(f.type, group)
-    }
+    const message = `\u26a1 Watchtower \u2014 File edited in the background. Highest priority: ${highestPriority}`
 
-    const summary = Array.from(byType.entries()).map(([type, items]) => {
-        const files = [...new Set(items.map(f => f.file).filter(Boolean))]
-        const fileList = files.length ? `: ${files.join(', ')}` : ''
-        return `\u2022 ${type} (${items.length})${fileList}`
-    }).join('\n')
-
-    const message = [
-        `\u26a1 Watchtower \u2014 Partial Scan`,
-        `Detected ${findings.length} issue${findings.length > 1 ? 's' : ''} in recently changed files`,
-        `Priority: ${counts.join(' | ')}`,
-        '',
-        summary,
-    ].join('\n')
-
-    const action = await vscode.window.showErrorMessage(message, 'Show Report', '\ud83d\udd0d Run Full Scan')
+    const action = await vscode.window.showErrorMessage(message, 'Show Report')
 
     if (action === 'Show Report') {
-        const reportHtml = generateHTMLReport(findings, true)
-        const panel = vscode.window.createWebviewPanel('watchtowerReport', 'Watchtower Partial Scan', vscode.ViewColumn.One, { enableScripts: true })
-        panel.webview.html = reportHtml
-    } else if (action === '\ud83d\udd0d Run Full Scan') {
-        vscode.commands.executeCommand('watchtower.analyze')
+        const settings = Settings.getInstance()
+        await showReportPanel(findings, settings, true)
     }
 }
 
@@ -378,7 +351,7 @@ export const generateHTMLReport = (findings: Finding[], partial: boolean = false
         </h1>
         ${partial
             ? `<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.3);border-radius:6px;padding:6px 14px;margin-bottom:12px;font-size:0.88em;">
-                    ⚡ <span style="color:#ffa726;"><strong>Partial Scan</strong> — Only recently changed files were analyzed.</span>
+                    ⚡ <span style="color:#ffa726;"><strong>Partial Scan</strong> — Only changed file was analyzed.</span>
                 </div>`
             : ''}
         <p style="margin:0 0 16px;color:#757575;font-size:0.92em;">
