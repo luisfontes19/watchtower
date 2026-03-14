@@ -158,13 +158,23 @@ export const showAlerts = async (findings: Finding[]): Promise<void> => {
 
     const highestPriority = highCount > 0 ? '\ud83d\udd34 High' : medCount > 0 ? '\ud83d\udfe0 Medium' : '\ud83d\udfe1 Low'
 
-    const message = `\u26a1 Watchtower \u2014 File edited in the background. Highest priority: ${highestPriority}`
+    const files = [...new Set(findings.map(f => f.file).filter(Boolean))]
+    const fileList = files.length > 0 ? ` (${files.join(', ')})` : ''
 
-    const action = await vscode.window.showErrorMessage(message, 'Show Report')
+    const message = `\u26a1 Watchtower \u2014 File edited in the background${fileList}. Highest priority: ${highestPriority}`
+
+    const buttons = files.length === 1 ? ['Show Report', 'Open File'] : ['Show Report']
+    const action = await vscode.window.showErrorMessage(message, ...buttons)
 
     if (action === 'Show Report') {
         const settings = Settings.getInstance()
         await showReportPanel(findings, settings, true)
+    } else if (action === 'Open File' && files.length === 1) {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+        if (workspaceFolder) {
+            const fileUri = vscode.Uri.joinPath(workspaceFolder.uri, files[0])
+            await vscode.window.showTextDocument(fileUri)
+        }
     }
 }
 
