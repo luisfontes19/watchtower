@@ -62,9 +62,9 @@ export function activate(context: vscode.ExtensionContext) {
 		watcher
 	]
 
-	if (settings.shouldRunRealtimeScanForWorkspace()) {
+	if (settings.shouldRunRealtimeScanForWorkspace())
 		realTimeListeners.forEach(listener => context.subscriptions.push(listener))
-	}
+
 
 
 	context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(() => {

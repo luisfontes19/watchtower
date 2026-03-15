@@ -82,6 +82,8 @@ export class Watchtower {
     }
 
     public async onFileCreated(uri: vscode.Uri) {
+        console.log(`[Watchtower] File created: ${vscode.workspace.asRelativePath(uri)}`)
+
         if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
 
         const findings = await this.scanFile(uri, undefined, true)
@@ -93,12 +95,16 @@ export class Watchtower {
     }
 
     public async onFileOpened(e: vscode.TextDocument) {
+        console.log(`[Watchtower] File opened: ${vscode.workspace.asRelativePath(e.uri)}`)
+
         if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
 
         await this.scanFile(e.uri, new TextEncoder().encode(e.getText()))
     }
 
     public async onFileChanged(uri: vscode.Uri) {
+        console.log(`[Watchtower] File changed: ${vscode.workspace.asRelativePath(uri)}`)
+
         if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
 
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri)
@@ -113,9 +119,12 @@ export class Watchtower {
     }
 
     public async onActiveEditorChanged(editor: vscode.TextEditor | undefined) {
+        console.log(`[Watchtower] Active editor changed: ${vscode.workspace.asRelativePath(editor.document.uri)}`)
+
         if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
 
         if (!editor) return
+
         const doc = editor.document
         await this.scanFile(doc.uri, new TextEncoder().encode(doc.getText()))
 
@@ -125,6 +134,7 @@ export class Watchtower {
      * Run a full workspace scan and return findings
      */
     public async runScan(): Promise<Finding[]> {
+        console.log('[Watchtower] Starting full workspace scan')
 
         return vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -158,6 +168,7 @@ export class Watchtower {
 
             this.setInlineFindings(findings)
 
+            console.log(`[Watchtower] Scan complete: ${findings.length} findings`)
             return findings
         })
     }
@@ -197,9 +208,12 @@ export class Watchtower {
     }
 
     public async runInitialScan(): Promise<void> {
-        if (!this.settings.shouldRunStartupScanForWorkspace())
+        if (!this.settings.shouldRunStartupScanForWorkspace()) {
+            console.log('[Watchtower] Startup scan disabled for this workspace, skipping')
             return
+        }
 
+        console.log('[Watchtower] Running initial scan')
         const wsfolders = vscode.workspace.workspaceFolders
         if (!wsfolders || wsfolders.length === 0) return
 
@@ -210,6 +224,7 @@ export class Watchtower {
     }
 
     public async commandRunScan(): Promise<void> {
+        console.log('[Watchtower] Manual scan triggered')
         const findings = await this.runScan()
 
         if (findings.length === 0)
@@ -217,28 +232,6 @@ export class Watchtower {
 
     }
 
-    public async commandDisableStartupScanForWorkspace(): Promise<void> {
-        const confirm = await vscode.window.showWarningMessage(
-            'Disabling Startup Scan means Watchtower will no longer automatically scan this workspace when you open it. You can still run scans manually via the command palette.',
-            { modal: true },
-            'Disable Startup Scan'
-        )
-        if (confirm === 'Disable Startup Scan') {
-            await this.settings.setWorkspaceStartupScan(false)
-
-        }
-    }
-
-    public async commandDisableRealTimeDetectionForWorkspace(): Promise<void> {
-        const confirm = await vscode.window.showWarningMessage(
-            'Disabling Real-Time Protection means Watchtower will no longer monitor file changes in this workspace. New or modified files will not be checked for threats until you run a manual scan.',
-            { modal: true },
-            'Disable Real-Time Protection'
-        )
-        if (confirm === 'Disable Real-Time Protection') {
-            await this.settings.setWorkspaceRealTimeDetection(false)
-        }
-    }
 
     public async commandToggleWorkspaceStartupScan(): Promise<void> {
         const current = this.settings.getWorkspaceStartupScan()
