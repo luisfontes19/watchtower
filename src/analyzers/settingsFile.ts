@@ -2,6 +2,7 @@ import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { SUSPICIOUS_COMMANDS } from '../dangerousCommands'
 import { Finding, FindingType } from '../types'
+import { rangeOfKeyInText } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
 
 
@@ -37,7 +38,8 @@ export class SettingsAnalyzer extends StaticAnalyzer {
                         name: `Custom Interpreter Path defined in ${vscode.workspace.asRelativePath(uri)}`,
                         detail: `Setting "${currentPath}" points to a custom interpreter path: "${value}". This could be an attempt to execute arbitrary binaries.`,
                         priority: 'high',
-                        file: vscode.workspace.asRelativePath(uri, false)
+                        file: vscode.workspace.asRelativePath(uri, false),
+                        range: rangeOfKeyInText(textContent, key)
                     })
                 }
                 if (typeof value === 'object') {
@@ -49,7 +51,7 @@ export class SettingsAnalyzer extends StaticAnalyzer {
         findInterpreterPaths(json)
 
         // Check for AI agent security issues
-        const aiConfigIssue = this.checkAiAgentConfiguration(json, uri)
+        const aiConfigIssue = this.checkAiAgentConfiguration(json, uri, textContent)
         if (aiConfigIssue) {
             findings.push(aiConfigIssue)
         }
@@ -57,7 +59,7 @@ export class SettingsAnalyzer extends StaticAnalyzer {
         return findings
     }
 
-    private checkAiAgentConfiguration(json: Record<string, any>, uri: vscode.Uri): Finding | undefined {
+    private checkAiAgentConfiguration(json: Record<string, any>, uri: vscode.Uri, text: string): Finding | undefined {
         const issues: string[] = []
         let score = 0
 
@@ -119,12 +121,21 @@ export class SettingsAnalyzer extends StaticAnalyzer {
 
         const priority: Finding['priority'] = score >= 3 ? 'high' : score === 2 ? 'medium' : 'low'
 
+        // Point to the first matching AI config key
+        const aiKeys = ['chat.tools.autoApprove', 'chat.tools.urls.autoApprove', 'chat.tools.edits.autoApprove', 'chat.tools.terminal.autoApprove']
+        let range: vscode.Range | undefined
+        for (const k of aiKeys) {
+            range = rangeOfKeyInText(text, k)
+            if (range) break
+        }
+
         return {
             type: FindingType.AutoApprove,
             name: "Insecure AI agent configurations can lead to compromises",
             detail: issues.join('\n'),
             priority,
-            file: vscode.workspace.asRelativePath(uri, false)
+            file: vscode.workspace.asRelativePath(uri, false),
+            range
         }
     }
 

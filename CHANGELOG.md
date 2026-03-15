@@ -1,8 +1,11 @@
 # Change Log
 
-## [0.1.5]
+## [0.2.0]
 
+* New Sidepanel view to show findings and view/manage current settings status
 * Add analyzer for python virtual environments in the project
+* Refactored extension settings
+* Revampted HTML finding report
 
 ## [0.1.4]
 

@@ -17,31 +17,31 @@ suite('DevContainerAnalyzer', () => {
 
         test('returns empty findings when no customizations', () => {
             const json = {}
-            const findings = analyzer.checkMcpServers(json, fakeUri)
+            const findings = analyzer.checkMcpServers(json, fakeUri, JSON.stringify(json))
             assert.strictEqual(findings.length, 0)
         })
 
         test('returns empty findings when customizations has no vscode key', () => {
             const json = { customizations: {} }
-            const findings = analyzer.checkMcpServers(json, fakeUri)
+            const findings = analyzer.checkMcpServers(json, fakeUri, JSON.stringify(json))
             assert.strictEqual(findings.length, 0)
         })
 
         test('returns empty findings when vscode has no mcp key', () => {
             const json = { customizations: { vscode: {} } }
-            const findings = analyzer.checkMcpServers(json, fakeUri)
+            const findings = analyzer.checkMcpServers(json, fakeUri, JSON.stringify(json))
             assert.strictEqual(findings.length, 0)
         })
 
         test('returns empty findings when mcp has no servers key', () => {
             const json = { customizations: { vscode: { mcp: {} } } }
-            const findings = analyzer.checkMcpServers(json, fakeUri)
+            const findings = analyzer.checkMcpServers(json, fakeUri, JSON.stringify(json))
             assert.strictEqual(findings.length, 0)
         })
 
         test('returns empty findings when servers is empty', () => {
             const json = { customizations: { vscode: { mcp: { servers: {} } } } }
-            const findings = analyzer.checkMcpServers(json, fakeUri)
+            const findings = analyzer.checkMcpServers(json, fakeUri, JSON.stringify(json))
             assert.strictEqual(findings.length, 0)
         })
 
@@ -57,7 +57,7 @@ suite('DevContainerAnalyzer', () => {
                     }
                 }
             }
-            const findings = analyzer.checkMcpServers(json, fakeUri)
+            const findings = analyzer.checkMcpServers(json, fakeUri, JSON.stringify(json))
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].type, FindingType.McpServer)
             assert.ok(findings[0].name.includes('my-server'))
@@ -79,7 +79,7 @@ suite('DevContainerAnalyzer', () => {
                     }
                 }
             }
-            const findings = analyzer.checkMcpServers(json, fakeUri)
+            const findings = analyzer.checkMcpServers(json, fakeUri, JSON.stringify(json))
             assert.strictEqual(findings.length, 3)
             const names = findings.map(f => f.name)
             assert.ok(names.some(n => n.includes('server-a')))
@@ -99,7 +99,7 @@ suite('DevContainerAnalyzer', () => {
                     }
                 }
             }
-            const findings = analyzer.checkMcpServers(json, fakeUri)
+            const findings = analyzer.checkMcpServers(json, fakeUri, JSON.stringify(json))
             assert.ok(findings[0].detail.includes('dangerous-tool'))
         })
 
@@ -115,7 +115,7 @@ suite('DevContainerAnalyzer', () => {
                     }
                 }
             }
-            const findings = analyzer.checkMcpServers(json, fakeUri)
+            const findings = analyzer.checkMcpServers(json, fakeUri, JSON.stringify(json))
             assert.ok(findings[0].name.includes('devcontainer.json'))
         })
     })

@@ -2,6 +2,7 @@ import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { isDangerousCommand } from '../dangerousCommands'
 import { Finding, FindingType } from '../types'
+import { rangeFromJsonNode } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
 
 export class PackageJsonAnalyzer extends StaticAnalyzer {
@@ -15,11 +16,14 @@ export class PackageJsonAnalyzer extends StaticAnalyzer {
 
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         const data = content ?? await vscode.workspace.fs.readFile(uri)
-        const json = jsonc.parse(new TextDecoder().decode(data)) as Record<string, unknown>
-        return this.checkPackageJson(json, uri)
+        const text = new TextDecoder().decode(data)
+
+        return this.checkPackageJson(text, uri)
     }
 
-    checkPackageJson(json: Record<string, any>, uri: vscode.Uri): Finding[] {
+    checkPackageJson(text: string, uri: vscode.Uri,): Finding[] {
+        const json: any = jsonc.parse(text) as Record<string, unknown>
+
         const findings: Finding[] = []
         if (!json.scripts?.preinstall) return findings
 
@@ -30,7 +34,8 @@ export class PackageJsonAnalyzer extends StaticAnalyzer {
             name: `Detected preinstall script in package.json`,
             detail: `A preinstall script was detected in package.json. Preinstall scripts are a known attack vector for supply chain attacks, as they run before any dependencies are installed and can execute arbitrary code. Review the preinstall script to ensure it is safe.`,
             priority: priority,
-            file: vscode.workspace.asRelativePath(uri, false)
+            file: vscode.workspace.asRelativePath(uri, false),
+            range: rangeFromJsonNode(text, ['scripts', 'preinstall'])
         })
 
         return findings

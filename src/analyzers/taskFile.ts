@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 
 import { isDangerousCommand } from '../dangerousCommands'
 import { Finding, FindingType, Task } from '../types'
+import { rangeFromJsonNode } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
 
 export class TaskAnalyzer extends StaticAnalyzer {
@@ -26,15 +27,15 @@ export class TaskAnalyzer extends StaticAnalyzer {
         const tasks = jsonContent.tasks as Task[] || []
 
         const findings: Finding[] = []
-        for (const task of tasks) {
-            const finding = this.analyzeTask(task, uri)
+        for (let i = 0; i < tasks.length; i++) {
+            const finding = this.analyzeTask(tasks[i], uri, textContent, i)
             if (finding) findings.push(finding)
         }
 
         return findings
     }
 
-    private analyzeTask(task: Task, uri: vscode.Uri): Finding | undefined {
+    private analyzeTask(task: Task, uri: vscode.Uri, text: string, index: number): Finding | undefined {
         const taskName = task.label ?? task.command ?? 'unknown'
 
         let data: any = { command: undefined, presentation: undefined, runOnFolderOpen: false, score: 0 }
@@ -73,6 +74,7 @@ export class TaskAnalyzer extends StaticAnalyzer {
             detail: issues.join('\n'),
             priority,
             file: vscode.workspace.asRelativePath(uri),
+            range: rangeFromJsonNode(text, ['tasks', index])
         }
     }
 

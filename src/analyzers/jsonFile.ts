@@ -1,6 +1,7 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { Finding, FindingType } from '../types'
+import { rangeFromJsonNode } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
 
 const MAX_PARAM_LENGTH = 30
@@ -26,12 +27,12 @@ export class JsonFile extends StaticAnalyzer {
 
         const schema = json["$schema"] as string
 
-        findings.push(...this.checkSchemaUrl(schema, uri))
+        findings.push(...this.checkSchemaUrl(schema, uri, text))
 
         return findings
     }
 
-    checkSchemaUrl(url: string, fileUri: vscode.Uri): Finding[] {
+    checkSchemaUrl(url: string, fileUri: vscode.Uri, text: string): Finding[] {
         const findings: Finding[] = []
         const uri = vscode.Uri.parse(url)
         const query = uri.query
@@ -42,6 +43,7 @@ export class JsonFile extends StaticAnalyzer {
         const entries = [...params.entries()]
 
         const relativeFile = vscode.workspace.asRelativePath(fileUri)
+        const schemaRange = rangeFromJsonNode(text, ['$schema'])
 
         if (entries.length > MAX_PARAM_COUNT) {
             findings.push({
@@ -49,7 +51,8 @@ export class JsonFile extends StaticAnalyzer {
                 name: `Potential data exfiltration via json $schema in ${relativeFile} (Too many query params)`,
                 detail: `Schema URL (${url}) contains ${entries.length} query parameters. A high number of query parameters may indicate potential data exfiltration`,
                 priority: 'medium',
-                file: vscode.workspace.asRelativePath(fileUri, false)
+                file: vscode.workspace.asRelativePath(fileUri, false),
+                range: schemaRange
             })
         }
 
@@ -57,19 +60,21 @@ export class JsonFile extends StaticAnalyzer {
             if (name.length > MAX_PARAM_LENGTH) {
                 findings.push({
                     type: FindingType.JsonSchema,
-                    name: `Potential data exfiltration via json $schema in ${relativeFile} (Big query param name)`,
+                    name: `Potential data exfiltration via json $schema (Big query param name)`,
                     detail: `Schema URL query parameter name "${name}" is ${name.length} chars. It seems too big, which may indicate data exfiltration`,
                     priority: 'medium',
-                    file: vscode.workspace.asRelativePath(fileUri, false)
+                    file: vscode.workspace.asRelativePath(fileUri, false),
+                    range: schemaRange
                 })
             }
             if (value.length > MAX_PARAM_LENGTH) {
                 findings.push({
                     type: FindingType.JsonSchema,
-                    name: `Potential data exfiltration via json $schema in ${relativeFile} (Big query param value)`,
+                    name: `Potential data exfiltration via json $schema (Big query param value)`,
                     detail: `Schema URL query parameter value "${value}" is ${value.length} chars. It seems too big, which may indicate data exfiltration`,
                     priority: 'medium',
-                    file: vscode.workspace.asRelativePath(fileUri, false)
+                    file: vscode.workspace.asRelativePath(fileUri, false),
+                    range: schemaRange
                 })
             }
         }

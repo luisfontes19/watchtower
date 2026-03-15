@@ -16,18 +16,18 @@ suite('JsonFile', () => {
     suite('checkSchemaUrl', () => {
 
         test('returns empty findings for URL without query params', () => {
-            const findings = analyzer.checkSchemaUrl('https://json-schema.org/draft/2020-12/schema', fakeUri)
+            const findings = analyzer.checkSchemaUrl('https://json-schema.org/draft/2020-12/schema', fakeUri, '{}')
             assert.strictEqual(findings.length, 0)
         })
 
         test('returns empty findings for URL with short, few params', () => {
-            const findings = analyzer.checkSchemaUrl('https://schema.org/Person?v=1&lang=en', fakeUri)
+            const findings = analyzer.checkSchemaUrl('https://schema.org/Person?v=1&lang=en', fakeUri, '{}')
             assert.strictEqual(findings.length, 0)
         })
 
         test('detects too many query parameters (>10)', () => {
             const url = 'https://schema.org/Person?' + Array.from({ length: 11 }, (_, i) => `p${i}=v${i}`).join('&')
-            const findings = analyzer.checkSchemaUrl(url, fakeUri)
+            const findings = analyzer.checkSchemaUrl(url, fakeUri, '{}')
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].type, FindingType.JsonSchema)
             assert.ok(findings[0].name.includes('Too many query params'))
@@ -37,7 +37,7 @@ suite('JsonFile', () => {
 
         test('detects long parameter names (>30 chars)', () => {
             const longName = 'a'.repeat(31)
-            const findings = analyzer.checkSchemaUrl(`https://schema.org/Person?${longName}=value`, fakeUri)
+            const findings = analyzer.checkSchemaUrl(`https://schema.org/Person?${longName}=value`, fakeUri, '{}')
             assert.strictEqual(findings.length, 1)
             assert.ok(findings[0].name.includes('Big query param name'))
             assert.ok(findings[0].detail.includes(longName))
@@ -46,7 +46,7 @@ suite('JsonFile', () => {
 
         test('detects long parameter values (>30 chars)', () => {
             const longValue = 'b'.repeat(31)
-            const findings = analyzer.checkSchemaUrl(`https://schema.org/Person?key=${longValue}`, fakeUri)
+            const findings = analyzer.checkSchemaUrl(`https://schema.org/Person?key=${longValue}`, fakeUri, '{}')
             assert.strictEqual(findings.length, 1)
             assert.ok(findings[0].name.includes('Big query param value'))
             assert.ok(findings[0].detail.includes(longValue))
@@ -57,7 +57,7 @@ suite('JsonFile', () => {
             const longName = 'x'.repeat(35)
             const longValue = 'y'.repeat(40)
             const url = `https://schema.org/Person?${longName}=${longValue}&` + Array.from({ length: 10 }, (_, i) => `p${i}=v${i}`).join('&')
-            const findings = analyzer.checkSchemaUrl(url, fakeUri)
+            const findings = analyzer.checkSchemaUrl(url, fakeUri, '{}')
             assert.ok(findings.length >= 2) // at least long name + long value
             const types = findings.map(f => f.name)
             assert.ok(types.some(n => n.includes('Big query param name')))
@@ -66,7 +66,7 @@ suite('JsonFile', () => {
 
         test('finding file path matches input', () => {
             const longName = 'suspicious'.repeat(5)
-            const findings = analyzer.checkSchemaUrl(`https://schema.org/Person?${longName}=val`, fakeUri)
+            const findings = analyzer.checkSchemaUrl(`https://schema.org/Person?${longName}=val`, fakeUri, '{}')
             assert.strictEqual(findings[0].file, fakeUri.fsPath)
         })
     })
@@ -92,7 +92,7 @@ suite('JsonFile', () => {
             const schemaUrl = `https://schema.org/Person?${longParam}=test`
 
             // Test the URL directly first
-            const directFindings = analyzer.checkSchemaUrl(schemaUrl, fakeUri)
+            const directFindings = analyzer.checkSchemaUrl(schemaUrl, fakeUri, '{}')
             assert.strictEqual(directFindings.length, 1, 'Direct checkSchemaUrl should find 1 issue')
 
             // Then test via checkFile
