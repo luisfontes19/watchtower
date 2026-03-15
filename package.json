@@ -55,7 +55,7 @@
       "properties": {
         "watchtower.startupScans": {
           "type": "string",
-          "default": "OnUntrusted",
+          "default": "OnEveryProject",
           "enum": [
             "OnEveryProject",
             "OnUntrusted",
