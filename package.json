@@ -80,32 +80,79 @@
         }
       }
     },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "watchtower",
+          "title": "Watchtower",
+          "icon": "data/images/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "watchtower": [
+        {
+          "type": "webview",
+          "id": "watchtower.overview",
+          "name": "Overview",
+          "initialSize": 1
+        },
+        {
+          "type": "webview",
+          "id": "watchtower.findings",
+          "name": "Findings",
+          "initialSize": 1
+        },
+        {
+          "id": "watchtower.settings",
+          "name": "Settings",
+          "initialSize": 1
+        }
+      ]
+    },
     "commands": [
       {
         "command": "watchtower.scan",
-        "title": "Watchtower: Scan Workspace"
+        "title": "Watchtower: Scan Workspace",
+        "icon": "$(search-refresh)"
       },
       {
-        "command": "watchtower.enableWorkspaceStartupScan",
-        "title": "Watchtower: Enable Workspace Startup Scan"
+        "command": "watchtower.exportToJSON",
+        "title": "Watchtower: Export Findings to JSON",
+        "icon": "$(export)"
       },
       {
-        "command": "watchtower.disableWorkspaceStartupScan",
-        "title": "Watchtower: Disable Workspace Startup Scan"
+        "command": "watchtower.showReport",
+        "title": "Watchtower: View Full Report",
+        "icon": "$(open-preview)"
       },
       {
-        "command": "watchtower.enableWorkspaceRealTimeDetection",
-        "title": "Watchtower: Enable Workspace Real-Time Protections. Will monitor for file changes and perform automatic scans"
+        "command": "watchtower.toggleWorkspaceStartupScan",
+        "title": "Watchtower: Toggle Workspace Startup Scan"
       },
       {
-        "command": "watchtower.disableWorkspaceRealTimeDetection",
-        "title": "Watchtower: Disable Workspace Real-Time Detection. Will not perform scans"
-      },
-      {
-        "command": "watchtower.showSettings",
-        "title": "Watchtower: Show Settings Status"
+        "command": "watchtower.toggleWorkspaceRealTime",
+        "title": "Watchtower: Toggle Workspace Real-Time Detection"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "watchtower.scan",
+          "when": "view == watchtower.findings",
+          "group": "navigation"
+        },
+        {
+          "command": "watchtower.exportToJSON",
+          "when": "view == watchtower.findings && watchtower.hasFindings"
+        },
+        {
+          "command": "watchtower.showReport",
+          "when": "view == watchtower.findings && watchtower.hasFindings",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "bump:patch": "npm version patch",

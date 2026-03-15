@@ -42,7 +42,7 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
             const unicodeChar = `U+${char.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`
             return {
                 type: FindingType.InvisibleCode,
-                name: `Trojan Source Character Detected on ${relativePath}`,
+                name: `Trojan Source Character Detected`,
                 detail: `Trojan Source attacks use special Unicode characters to manipulate the display of code, making it appear different from its actual execution. The character \`${unicodeChar}\` is commonly used in these attacks. `,
                 priority: 'high',
                 file,
