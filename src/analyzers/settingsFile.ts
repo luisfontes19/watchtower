@@ -8,6 +8,23 @@ import { StaticAnalyzer } from './staticAnalyzer'
 
 export class SettingsAnalyzer extends StaticAnalyzer {
 
+    static readonly BINARY_KEYS = [
+        // Used for python
+        "python.defaultInterpreterPath",
+        "isort.path",
+        "python.pipenvPath",
+        "python.poetryPath",
+        "python.pixiToolPath",
+        "python.testing.pytestPath",
+        "python.analysis.typeServerExecutable",
+        // JS/TS
+        "js/ts.tsserver.node.path",
+        "debug.javascript.defaultRuntimeExecutable",
+
+        // PHP
+        "php.validate.executablePath",
+    ]
+
     alertOnEditedInBackground(): boolean {
         return true
     }
@@ -27,16 +44,19 @@ export class SettingsAnalyzer extends StaticAnalyzer {
         const json = jsonc.parse(textContent) as Record<string, any>
 
         const findInterpreterPaths = (obj: unknown, path: string = ''): void => {
-            if (obj === null || obj === undefined || typeof obj !== 'object') {
+            if (obj === null || obj === undefined || typeof obj !== 'object')
                 return
-            }
+
             for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
                 const currentPath = path ? `${path}.${key}` : key
-                if (key.toLowerCase().includes('interpreterpath')) {
+                if (SettingsAnalyzer.BINARY_KEYS.includes(key)
+
+
+                ) {
                     findings.push({
                         type: FindingType.Binary,
-                        name: `Custom Interpreter Path defined in ${vscode.workspace.asRelativePath(uri)}`,
-                        detail: `Setting "${currentPath}" points to a custom interpreter path: "${value}". This could be an attempt to execute arbitrary binaries.`,
+                        name: `Custom binary defined in ${vscode.workspace.asRelativePath(uri)}`,
+                        detail: `Setting "${currentPath}" points to a custom binary path: "${value}". This could be an attempt to execute malicious code.`,
                         priority: 'high',
                         file: vscode.workspace.asRelativePath(uri, false),
                         range: rangeOfKeyInText(textContent, key)

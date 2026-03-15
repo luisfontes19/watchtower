@@ -119,11 +119,11 @@ export class Watchtower {
     }
 
     public async onActiveEditorChanged(editor: vscode.TextEditor | undefined) {
+        if (!editor) return
+
         console.log(`[Watchtower] Active editor changed: ${vscode.workspace.asRelativePath(editor.document.uri)}`)
 
         if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
-
-        if (!editor) return
 
         const doc = editor.document
         await this.scanFile(doc.uri, new TextEncoder().encode(doc.getText()))
