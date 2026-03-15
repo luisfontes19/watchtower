@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.2.1]
+
+* Fix bug that prevented from finding venv binaries in the project
+* Changed default scan setting to scan on all projects
+
 ## [0.2.0]
 
 * New Sidepanel view to show findings and view/manage current settings status
