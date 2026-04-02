@@ -144,7 +144,8 @@ export class Watchtower {
             const findings: Finding[] = []
 
             progress.report({ increment: 0, message: 'Listing project files...' })
-            const files = await vscode.workspace.findFiles('**/*', '{**/node_modules/**,**/.venv/lib*,**/*.app/**}')
+            const excludePattern = `{${this.settings.getExcludedFolders().join(',')}}`
+            const files = await vscode.workspace.findFiles('**/*', excludePattern)
             console.log(`[Watchtower] Found ${files.length} files to scan`)
 
             if (token.isCancellationRequested) return findings

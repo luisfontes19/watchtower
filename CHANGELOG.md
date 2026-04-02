@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.2.2]
+
+* Add support for monitoring AI related files configured in chat settings from VSCode.
+* Add setting to ignore specific folders from being scanned, such as node_modules or .venv
+* Set extension settings with scope `application` to avoid being overridden by workspace settings
+
 ## [0.2.1]
 
 * Fix bug that prevented from finding venv binaries in the project

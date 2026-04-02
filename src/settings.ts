@@ -46,6 +46,12 @@ export class Settings {
             .get<InlineFindingType>('inlineFindings', InlineFindingType.invisible)
     }
 
+    public getExcludedFolders(): string[] {
+        return vscode.workspace
+            .getConfiguration('watchtower')
+            .get<string[]>('excludedFolders', [])
+    }
+
 
     public async setGlobalStartupScans(mode: StartupScansMode): Promise<void> {
         await vscode.workspace

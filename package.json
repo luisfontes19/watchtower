@@ -55,6 +55,7 @@
       "properties": {
         "watchtower.startupScans": {
           "type": "string",
+          "scope": "application",
           "default": "OnEveryProject",
           "enum": [
             "OnEveryProject",
@@ -70,6 +71,7 @@
         },
         "watchtower.inlineFindings": {
           "type": "string",
+          "scope": "application",
           "description": "Control the display of inline findings in the editor",
           "enum": [
             "all",
@@ -77,6 +79,26 @@
             "none"
           ],
           "default": "invisible"
+        },
+        "watchtower.excludedFolders": {
+          "type": "array",
+          "scope": "application",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/.venv/**",
+            "**/node_modules/**",
+            "**/.git/**",
+            "**/.svn/**",
+            "**/.hg/**",
+            "**/.cache/**",
+            "**/__pycache__/**",
+            "**/.mypy_cache/**",
+            "**/.pytest_cache/**",
+            "**/.tox/**"
+          ],
+          "description": "Folders to exclude from Watchtower scans"
         }
       }
     },
@@ -171,6 +193,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@types/minimatch": "^6.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/vscode": "^1.109.0",
@@ -179,8 +202,7 @@
     "esbuild": "^0.27.3",
     "mocha": "^11.7.5",
     "npm-run-all": "^4.1.5",
-    "typescript": "^5.9.3",
-    "@types/minimatch": "^6.0.0"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "isbinaryfile": "^6.0.0",
