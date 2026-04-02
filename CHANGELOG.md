@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.2.3]
+
+* Fix bugs with file path detections
+
 ## [0.2.2]
 
 * Add support for monitoring AI related files configured in chat settings from VSCode.

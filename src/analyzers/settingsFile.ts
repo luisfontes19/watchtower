@@ -49,13 +49,10 @@ export class SettingsAnalyzer extends StaticAnalyzer {
 
             for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
                 const currentPath = path ? `${path}.${key}` : key
-                if (SettingsAnalyzer.BINARY_KEYS.includes(key)
-
-
-                ) {
+                if (SettingsAnalyzer.BINARY_KEYS.some(k => k.toLowerCase() === currentPath.toLowerCase())) {
                     findings.push({
                         type: FindingType.Binary,
-                        name: `Custom binary defined in ${vscode.workspace.asRelativePath(uri)}`,
+                        name: `Custom Interpreter Path defined in ${vscode.workspace.asRelativePath(uri)}`,
                         detail: `Setting "${currentPath}" points to a custom binary path: "${value}". This could be an attempt to execute malicious code.`,
                         priority: 'high',
                         file: vscode.workspace.asRelativePath(uri, false),

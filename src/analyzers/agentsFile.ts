@@ -46,6 +46,7 @@ export class AgentsAnalyzer extends StaticAnalyzer {
             "**/CLAUDE.md",
             ".github/copilot-instructions.md",
             ".github/instructions/*.instructions.md",
+            "**/AGENTS.md"
         ]
 
 

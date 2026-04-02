@@ -26,13 +26,13 @@ suite('SettingsAnalyzer', () => {
 
         test('detects python interpreterPath', async () => {
             const content = new TextEncoder().encode(JSON.stringify({
-                "python.interpreterPath": "/usr/bin/python3.9"
+                "python.defaultinterpreterpath": "/usr/bin/python3.9"
             }))
             const findings = await analyzer.checkFile(fakeUri, content)
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].type, FindingType.Binary)
             assert.ok(findings[0].name.includes("Custom Interpreter Path"))
-            assert.ok(findings[0].detail.includes("python.interpreterPath"))
+            assert.ok(findings[0].detail.includes("python.defaultinterpreterpath"))
             assert.ok(findings[0].detail.includes("/usr/bin/python3.9"))
             assert.strictEqual(findings[0].priority, 'high')
         })
@@ -178,7 +178,7 @@ suite('SettingsAnalyzer', () => {
 
         test('handles multiple findings including interpreter path and AI settings', async () => {
             const content = new TextEncoder().encode(JSON.stringify({
-                "python.interpreterPath": "/malicious/python",
+                "python.defaultinterpreterpath": "/malicious/python",
                 "chat.tools.terminal.autoApprove": true
             }))
             const findings = await analyzer.checkFile(fakeUri, content)

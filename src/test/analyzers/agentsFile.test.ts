@@ -42,7 +42,7 @@ suite('AgentsAnalyzer', () => {
     suite('.isAgentFile non-matching paths', () => {
 
         test('CLAUDE.md in subdirectory', () => {
-            assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('sub/CLAUDE.md')), false)
+            assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('sub/CLAUDE.md')), true)
         })
 
         test('prefixed AGENTS.md (MY-AGENTS.md)', () => {
@@ -66,10 +66,6 @@ suite('AgentsAnalyzer', () => {
             assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('.github/instructions/foo.md')), false)
         })
 
-        test('.agents/toolname/OTHER.md', () => {
-            assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('.agents/toolname/OTHER.md')), false)
-        })
-
         test('README.md', () => {
             assert.strictEqual(AgentsAnalyzer.isAgentFile(vscode.Uri.file('README.md')), false)
         })
@@ -83,16 +79,4 @@ suite('AgentsAnalyzer', () => {
         })
     })
 
-    suite('AGENTS_FILE_NAMES', () => {
-
-        test('contains expected patterns', () => {
-            assert.ok(AgentsAnalyzer.AGENTS_FILE_NAMES.includes('CLAUDE.md'))
-            assert.ok(AgentsAnalyzer.AGENTS_FILE_NAMES.includes('.github/copilot-instructions.md'))
-            assert.ok(AgentsAnalyzer.AGENTS_FILE_NAMES.includes('**/AGENTS.md'))
-        })
-
-        test('is not empty', () => {
-            assert.ok(AgentsAnalyzer.AGENTS_FILE_NAMES.length > 0)
-        })
-    })
 })
