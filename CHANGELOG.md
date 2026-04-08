@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.2.4]
+
+* Add support for detecting malicious extensions using Aikido threat intelligence. Now, when new extensions are enabled, Watchtower will check if they are flagged as malicious and alert the user with a warning message and an option to uninstall the extension immediately.
+* Fix bug that added new findings every time a file was changed in the background. So the findings list could have 10 findings for the same file changed in the background. This is now fixed. Alerts on file change are still shown on every change.
+
 ## [0.2.3]
 
 * Fix bugs with file path detections

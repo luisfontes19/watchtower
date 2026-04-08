@@ -11,6 +11,7 @@ import { FindingsOverviewProvider } from './providers/findingsOverviewProvider'
 import { FindingsTreeProvider } from './providers/findingsTreeProvider'
 import { SettingsTreeProvider } from './providers/settingsTreeProvider'
 import { Settings } from './settings'
+import { ThreatIntel } from './threatIntel/threatIntel'
 import { Finding, FindingType, InlineFindingType } from './types'
 
 export class Watchtower {
@@ -23,6 +24,7 @@ export class Watchtower {
     private findingsTree: FindingsTreeProvider
     private findingsOverview: FindingsOverviewProvider
     private settingsTree: SettingsTreeProvider
+    private threatIntel: ThreatIntel
 
 
     private allAnalyzers: StaticAnalyzer[]
@@ -43,6 +45,7 @@ export class Watchtower {
         this.findingsTree = findingsTree
         this.findingsOverview = findingsOverview
         this.settingsTree = settingsTree
+        this.threatIntel = new ThreatIntel()
 
         const warningEmoji = '❗️'
         const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-size="12">${warningEmoji}</text></svg>`
@@ -76,8 +79,8 @@ export class Watchtower {
 
     public onWorkspaceTrusted() { }
 
-    private updateViews(partial = false) {
-        this.findingsTree.setFindings(this.findings, partial)
+    private updateViews() {
+        this.findingsTree.setFindings(this.findings)
         this.findingsOverview?.setFindings(this.findings)
     }
 
@@ -89,7 +92,7 @@ export class Watchtower {
         const findings = await this.scanFile(uri, undefined, true)
         if (findings.length > 0) {
             this.findings.push(...findings)
-            this.updateViews(true)
+            this.updateViews()
             this.alertFindings(findings)
         }
     }
@@ -111,11 +114,16 @@ export class Watchtower {
         const filePath = vscode.Uri.joinPath(workspaceFolder!.uri, vscode.workspace.asRelativePath(uri))
 
         const findings = await this.scanFile(filePath, undefined, true)
-        if (findings.length > 0) {
-            this.findings.push(...findings)
-            this.updateViews(true)
-            this.alertFindings(findings)
-        }
+        if (findings.length === 0) return
+
+        // if a silent file change finding already exists for this file, don't add another one, but still get alerted
+        const newFindings = findings.filter(f =>
+            f.type !== FindingType.SilentFileChange ||
+            !this.findings.some(existing => existing.file === f.file && existing.type === FindingType.SilentFileChange)
+        )
+        this.findings.push(...newFindings)
+        this.updateViews()
+        this.alertFindings(findings)
     }
 
     public async onActiveEditorChanged(editor: vscode.TextEditor | undefined) {
@@ -127,7 +135,50 @@ export class Watchtower {
 
         const doc = editor.document
         await this.scanFile(doc.uri, new TextEncoder().encode(doc.getText()))
+    }
 
+    public async onExtensionsChanged() {
+        console.log('[Watchtower] Extensions changed, checking for new extensions and potential threats')
+        const currentExtensions = vscode.extensions.all
+            .filter(ext => !(ext.packageJSON as { isBuiltin?: boolean })?.isBuiltin)
+            .map(ext => ext.id)
+
+        const knownExtensions = this.settings.getKnownExtensions()
+
+        const newExtensions = knownExtensions.length === 0
+            ? [] // First run — just save the baseline
+            : currentExtensions.filter(id => !knownExtensions.includes(id))
+
+        await this.settings.setKnownExtensions(currentExtensions)
+
+        if (newExtensions.length === 0) return
+
+        console.log(`[Watchtower] New extensions detected: ${newExtensions.join(', ')}`)
+
+        for (const extensionId of newExtensions) {
+            const malicious = await this.threatIntel.isExtensionMalicious(extensionId)
+            if (!malicious) continue
+
+            const title = `Malicious Extension "${extensionId}"`
+            const detail = `The extension "${extensionId}" has been identified as malicious. It is strongly recommended to uninstall it immediately.`
+
+            this.findings.push({
+                file: extensionId,
+                name: title,
+                detail: detail,
+                priority: 'high',
+                type: FindingType.MaliciousExtension
+            })
+
+            vscode.window.showWarningMessage(`🔴 Watchtower: ${title}`, { modal: true, detail: detail }, 'Uninstall').then(action => {
+                if (action === 'Uninstall')
+                    vscode.commands.executeCommand('workbench.extensions.uninstallExtension', extensionId)
+
+            })
+
+            this.updateViews()
+
+        }
     }
 
     /**

@@ -89,6 +89,7 @@
           "default": [
             "**/.venv/**",
             "**/node_modules/**",
+            "**/.vscode-test/**",
             "**/.git/**",
             "**/.svn/**",
             "**/.hg/**",

@@ -4,9 +4,11 @@ import { InlineFindingType, StartupScansMode } from './types'
 export class Settings {
     private static instance: Settings
     private workspaceStorage: vscode.Memento
+    private globalStorage: vscode.Memento
 
     private constructor(context: vscode.ExtensionContext) {
         this.workspaceStorage = context.workspaceState
+        this.globalStorage = context.globalState
     }
 
     public static getInstance(context?: vscode.ExtensionContext): Settings {
@@ -117,5 +119,13 @@ export class Settings {
             startupScanDisabled: !this.getWorkspaceStartupScan(),
             realtimeDetectionDisabled: !this.getWorkspaceRealTimeDetection()
         }
+    }
+
+    public getKnownExtensions(): string[] {
+        return this.globalStorage.get<string[]>('knownExtensions', [])
+    }
+
+    public async setKnownExtensions(extensionIds: string[]): Promise<void> {
+        await this.globalStorage.update('knownExtensions', extensionIds)
     }
 }

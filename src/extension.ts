@@ -49,9 +49,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	/////////////////////////////
-	// Real-time file listeners
+	// Real-time listeners
 	/////////////////////////////
 
+	// FILE LISTENERS
 	const watcher = vscode.workspace.createFileSystemWatcher('**/*')
 	watcher.onDidCreate((uri) => watchtower.onFileCreated(uri))
 	watcher.onDidChange((uri) => watchtower.onFileChanged(uri))
@@ -66,7 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
 		realTimeListeners.forEach(listener => context.subscriptions.push(listener))
 
 
-
+	// WORKSPACE TRUST LISTENER
 	context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(() => {
 		console.log("Workspace trust granted")
 		settingsTree.refresh()
@@ -75,6 +76,10 @@ export function activate(context: vscode.ExtensionContext) {
 			realTimeListeners.forEach(listener => listener.dispose())
 		}
 	}))
+
+	context.subscriptions.push(
+		vscode.extensions.onDidChange(watchtower.onExtensionsChanged.bind(watchtower))
+	)
 
 
 

@@ -9,6 +9,7 @@ export enum FindingType {
     InvisibleCode = "Invisible Code",
     AutoApprove = "AI Auto-Approve",
     PreinstallScript = "Preinstall Script",
+    MaliciousExtension = "Malicious Extension"
 }
 
 export interface Finding {

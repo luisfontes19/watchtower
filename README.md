@@ -39,6 +39,66 @@ In today's development landscape, malicious actors are increasingly targeting de
 
 Watchtower automatically detects these threats and provides detailed security reports to keep you safe.
 
+
+## 🚀 Getting Started & Best Practices
+
+1. **Install Watchtower** from the VS Code Marketplace
+2. **Open workspaces in Restricted Mode** - Always open new or untrusted projects in VSCode's Restricted Mode first
+3. **Automatic scanning** - Watchtower will automatically scan your workspace when you first open it
+4. **Review findings** - Check the security report and address any high-priority issues before trusting the workspace
+5. **Enable trust carefully** - Only trust the workspace after verifying it's safe
+
+### 💡 Usage Tips
+
+- **Exclude Folders from Scanning**: If you have folders you want Watchtower to skip (e.g. large vendor directories), go to **Settings (User) → Extensions → Watchtower** and add folder patterns to the **Excluded Folders** list.
+
+- **Only scan unstrusted workspaces on startup**: You can configure Watchtower to only run startup scans on untrusted workspaces. Go to **Settings (User) → Extensions → Watchtower** and set **Startup Scans** to **On Untrusted Workspaces**.
+
+- **Change Workspace Settings**: You can easily tweak workspace settings through the sidepanel options
+![Settings](data/images/project-settings.jpg)
+
+### Working with VSCode Workspace Trust (Native vscode feature)
+
+**🔒 Important Security Practice**: Always open untrusted projects in **Restricted Mode** first. Watchtower is a reactive security tool - it detects threats but cannot prevent them (at least for now) from executing if the workspace is already trusted.
+
+**Opening Projects Safely:**
+
+- When VSCode asks "Do you trust this folder?", choose **"No, I don't trust the authors"**
+- Let Watchtower scan the project first
+- Review all findings before clicking "Trust Folder"
+
+**Managing Workspace Trust:**
+
+- **View trusted folders**: Command Palette → `Workspaces: Manage Workspace Trust`
+- **Remove trust**: Use the workspace trust manager to revoke trust from suspicious folders
+- **Reset all trust**: If you've trusted too many folders, you can reset trust settings through VSCode preferences
+
+### Background Protection
+
+Once enabled, Watchtower continuously monitors for:
+
+- Changes to sensitive configuration files
+- New suspicious tasks or launch configurations
+- Addition of invisible code
+
+### Manual Scanning
+
+Need to run a fresh scan? Use the Command Palette (`Ctrl+Shift+P`) and run **`Watchtower: Scan Workspace`** anytime.
+
+## When to Use Watchtower
+
+- **Before trusting any repository** - Scan unknown projects before working on them
+- **In corporate environments** - Ensure code repositories meet security standards
+- **Open source contributions** - Verify the safety of repositories you contribute to
+- **Team collaboration** - Protect against accidentally committed malicious configurations
+
+## 🔐 Privacy & Trust
+
+- **No data collection**: Watchtower runs entirely locally
+- **No network requests**: All scanning happens on your machine
+- **Open source**: Inspect the code to verify security claims
+- **Workspace isolation**: Scans only affect your current project
+
 ## ✨ Features
 
 ![Watchtower Report](data/images/features1.jpg)
@@ -80,57 +140,6 @@ Scans `.vscode/tasks.json` for dangerous commands including:
 - File-specific findings with detailed explanations
 - Actionable recommendations for remediation
 
-## 🚀 Getting Started & Best Practices
-
-### Initial Setup
-
-1. **Install Watchtower** from the VS Code Marketplace
-2. **Open workspaces in Restricted Mode** - Always open new or untrusted projects in VSCode's Restricted Mode first
-3. **Automatic scanning** - Watchtower will automatically scan your workspace when you first open it
-4. **Review findings** - Check the security report and address any high-priority issues before trusting the workspace
-5. **Enable trust carefully** - Only trust the workspace after verifying it's safe
-
-### Working with VSCode Workspace Trust (Native vscode feature)
-
-**🔒 Important Security Practice**: Always open untrusted projects in **Restricted Mode** first. Watchtower is a reactive security tool - it detects threats but cannot prevent them (at least for now) from executing if the workspace is already trusted.
-
-**Opening Projects Safely:**
-
-- When VSCode asks "Do you trust this folder?", choose **"No, I don't trust the authors"**
-- Let Watchtower scan the project first
-- Review all findings before clicking "Trust Folder"
-
-**Managing Workspace Trust:**
-
-- **View trusted folders**: Command Palette → `Workspaces: Manage Workspace Trust`
-- **Remove trust**: Use the workspace trust manager to revoke trust from suspicious folders
-- **Reset all trust**: If you've trusted too many folders, you can reset trust settings through VSCode preferences
-
-### Background Protection
-
-Once enabled, Watchtower continuously monitors for:
-
-- Changes to sensitive configuration files
-- New suspicious tasks or launch configurations
-- Addition of invisible code
-
-### Manual Scanning
-
-Need to run a fresh scan? Use the Command Palette (`Ctrl+Shift+P`) and run **`Watchtower: Scan Workspace`** anytime.
-
-## � When to Use Watchtower
-
-- **Before trusting any repository** - Scan unknown projects before working on them
-- **In corporate environments** - Ensure code repositories meet security standards
-- **Open source contributions** - Verify the safety of repositories you contribute to
-- **Team collaboration** - Protect against accidentally committed malicious configurations
-
-## 🔐 Privacy & Trust
-
-- **No data collection**: Watchtower runs entirely locally
-- **No network requests**: All scanning happens on your machine
-- **Open source**: Inspect the code to verify security claims
-- **Workspace isolation**: Scans only affect your current project
 
 ## 🤝 Contributing
 

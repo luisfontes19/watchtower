@@ -64,7 +64,7 @@ export class FindingsTreeProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    setFindings(findings: Finding[], _partial = false) {
+    setFindings(findings: Finding[]) {
         this.findings = findings
         vscode.commands.executeCommand('setContext', 'watchtower.hasFindings', findings.length > 0)
         this.updateBadge()
