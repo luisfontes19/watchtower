@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.3.1]
+
+* Update README for better SEO
+
 ## [0.3.0]
 
 * Add support for detecting malicious extensions using Aikido threat intelligence. Now, when new extensions are enabled, Watchtower will check if they are flagged as malicious and alert the user with a warning message and an option to uninstall the extension immediately.

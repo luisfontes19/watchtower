@@ -1,166 +1,86 @@
-# 🛡️ Watchtower - VSCode Security Scanner
+# 🛡️ Watchtower - VS Code Security Scanner
 
-**Protect your development environment from malicious configurations and hidden threats.**
+> **Scan untrusted workspaces for malicious code, hidden threats, and supply chain attacks — before you run anything.**
 
-![Watchtower Banner](data/images/logo.png)
+[![GitHub](https://img.shields.io/badge/GitHub-luisfontes19%2Fwatchtower-blue?logo=github)](https://github.com/luisfontes19/watchtower)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
+[![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.109-blue?logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=luisfontes19.watchtower)
 
-Watchtower is a comprehensive security extension that scans your VSCode workspace for potential security risks, malicious configurations, and hidden code that could compromise your development environment.
+![Watchtower security report](data/images/features1.jpg)
 
-## 🔒 Why You Need Watchtower
-
-In today's development landscape, malicious actors are increasingly targeting developer environments and IDEs to compromise systems and steal sensitive data. Watchtower protects against several well-documented attack vectors:
-
-### 🎯 **Real-World Threats & Attack Techniques**
-
-**[Invisible Unicode Attacks](https://www.aikido.dev/blog/the-return-of-the-invisible-threat-hidden-pua-unicode-hits-github-repositorties)**
-
-- Malicious code hidden using Unicode steganography that's invisible to the human eye
-- Attackers inject harmful commands using Unicode tag characters while the visible code appears legitimate
-
-**[Contagious Interview & Supply Chain Attacks](https://opensourcemalware.com/blog/contagious-code-fake-font)**
-
-- North Korean APT groups targeting developers through fake job interviews and malicious packages
-- Compromised dependencies that execute malicious code during development
-
-**[Malicious VSCode Tasks](https://www.threatlocker.com/blog/malicious-vs-code-tasks-json-abuse-enables-multi-stage-infostealer-deployment)**
-
-- `.vscode/tasks.json` files weaponized to execute arbitrary commands during project builds
-- Multi-stage infostealers deployed through seemingly innocent development tasks
-
-**[AI Skills Exploitation](https://opensourcemalware.com/blog/malicious-clawhub-skills-hide-in-plain-sight)**
-
-- Malicious AI coding assistants and skills that compromise developer environments
-- Auto-approval settings that bypass security reviews for AI-generated code
-
-**[IDEsaster Techniques](https://maccarita.com/posts/idesaster/)**
-
-- Comprehensive IDE-based attack methods targeting developer workflows
-- Configuration poisoning that persists across multiple projects
-
-Watchtower automatically detects these threats and provides detailed security reports to keep you safe.
-
-
-## 🚀 Getting Started & Best Practices
-
-1. **Install Watchtower** from the VS Code Marketplace
-2. **Open workspaces in Restricted Mode** - Always open new or untrusted projects in VSCode's Restricted Mode first
-3. **Automatic scanning** - Watchtower will automatically scan your workspace when you first open it
-4. **Review findings** - Check the security report and address any high-priority issues before trusting the workspace
-5. **Enable trust carefully** - Only trust the workspace after verifying it's safe
-
-### 💡 Usage Tips
-
-- **Exclude Folders from Scanning**: If you have folders you want Watchtower to skip (e.g. large vendor directories), go to **Settings (User) → Extensions → Watchtower** and add folder patterns to the **Excluded Folders** list.
-
-- **Only scan unstrusted workspaces on startup**: You can configure Watchtower to only run startup scans on untrusted workspaces. Go to **Settings (User) → Extensions → Watchtower** and set **Startup Scans** to **On Untrusted Workspaces**.
-
-- **Change Workspace Settings**: You can easily tweak workspace settings through the sidepanel options
-![Settings](data/images/project-settings.jpg)
-
-### Working with VSCode Workspace Trust (Native vscode feature)
-
-**🔒 Important Security Practice**: Always open untrusted projects in **Restricted Mode** first. Watchtower is a reactive security tool - it detects threats but cannot prevent them (at least for now) from executing if the workspace is already trusted.
-
-**Opening Projects Safely:**
-
-- When VSCode asks "Do you trust this folder?", choose **"No, I don't trust the authors"**
-- Let Watchtower scan the project first
-- Review all findings before clicking "Trust Folder"
-
-**Managing Workspace Trust:**
-
-- **View trusted folders**: Command Palette → `Workspaces: Manage Workspace Trust`
-- **Remove trust**: Use the workspace trust manager to revoke trust from suspicious folders
-- **Reset all trust**: If you've trusted too many folders, you can reset trust settings through VSCode preferences
-
-### Background Protection
-
-Once enabled, Watchtower continuously monitors for:
-
-- Changes to sensitive configuration files
-- New suspicious tasks or launch configurations
-- Addition of invisible code
-
-### Manual Scanning
-
-Need to run a fresh scan? Use the Command Palette (`Ctrl+Shift+P`) and run **`Watchtower: Scan Workspace`** anytime.
-
-## When to Use Watchtower
-
-- **Before trusting any repository** - Scan unknown projects before working on them
-- **In corporate environments** - Ensure code repositories meet security standards
-- **Open source contributions** - Verify the safety of repositories you contribute to
-- **Team collaboration** - Protect against accidentally committed malicious configurations
-
-## 🔐 Privacy & Trust
-
-- **No data collection**: Watchtower runs entirely locally
-- **No network requests**: All scanning happens on your machine
-- **Open source**: Inspect the code to verify security claims
-- **Workspace isolation**: Scans only affect your current project
-
-## ✨ Features
-
-![Watchtower Report](data/images/features1.jpg)
-
-### 🔍 **Invisible Code Detection**
-
-- Detects hidden Unicode tag characters (`U+E0000-U+E007F`) used to hide malicious code
-- Protects against steganographic attacks where code is invisible to the human eye
-
-![Invisible Code](data/images/features3.jpg)
-
-### 📋 **Malicious Task Scanner**
-
-Scans `.vscode/tasks.json` for dangerous commands including:
-
-- Network requests (`curl`, `wget`, `Invoke-WebRequest`)
-- Shell execution (`bash`, `powershell`, `cmd`)
-- Encoding utilities (`base64`, `certutil`)
-- Suspicious interpreters and download tools
-
-### ⚙️ **Configuration Security Analysis**
-
-- **Settings Scanner**: Detects custom interpreter paths that could execute malicious binaries
-- **Launch Configuration**: Analyzes launch.json for suspicious pre-launch tasks
-- **Dev Container Review**: Examines container configurations for security risks
-- **AI Agent Monitoring**: Watches for dangerous auto-approval settings
-
-### � **Malicious Extension Protection**
-
-- Checks newly installed extensions against known threat intelligence
-- **Automatic uninstall** of malicious extensions (enabled by default)
-- Configurable via `watchtower.autoUninstallMalicious` setting
-
-### �🚨 **Real-time Scanning**
-
-- **Monitoring** of file changes in the background, for sensitive configurations
-- **Startup scans** when opening new projects
-
-![Real Time](data/images/features2.jpg)
-
-### 📊 **Detailed Security Reports**
-
-- HTML and JSON report generation
-- Risk categorization (High/Medium/Low)
-- File-specific findings with detailed explanations
-- Actionable recommendations for remediation
-
-
-## 🤝 Contributing
-
-Found a new security pattern we should detect? Have ideas for improving Watchtower?
-
-- Report security patterns at [GitHub Issues](https://github.com/your-repo/watchtower)
-- Submit PRs for new analyzers
-- Share feedback on detection accuracy
-
-## 📝 License
-
-MIT License - See LICENSE file for details
+Watchtower automatically scans your VS Code workspace for **invisible Unicode attacks**, **malicious tasks**, **compromised extensions**, and **dangerous AI agent configurations**. Open that sketchy GitHub repo. Clone that interview take-home. Contribute to that open source project. Watchtower checks it first.
 
 ---
 
-**🛡️ Stay protected. Stay productive. Choose Watchtower.**
+## 🔍 What Gets Scanned
 
-*Don't let malicious configurations compromise your development environment. Install Watchtower today and code with confidence.*
+| Category | What Watchtower Checks |
+|---|---|
+| 👁️ **Invisible Unicode** | Hidden code using Unicode tag steganography (`U+E0000–U+E007F`) — invisible to the human eye |
+| 📋 **Malicious Tasks** | `tasks.json` commands that run shells, download payloads, or use encoding tricks (`curl`, `base64`, `certutil`) |
+| ⚙️ **Settings Hijacking** | Custom interpreter paths pointing to custom binaries |
+| 🧩 **Compromised Extensions** | Extensions cross-referenced against live threat intelligence, with **auto-uninstall** |
+| 🤖 **AI Agent Exploits** | Dangerous auto-approval settings in Copilot, Claude, Cursor, and other AI coding assistants |
+| 🚀 **Launch Configurations** | Suspicious pre-launch tasks hidden in `.vscode/launch.json` |
+| 🐳 **Dev Container Risks** | Security misconfigurations in `.devcontainer` files |
+
+And more...
+
+## 🚀 Getting Started
+
+**Recommended workflow for untrusted projects:**
+
+1. **Open the project** — VS Code will ask "Do you trust this folder?"
+2. **Choose "No, I don't trust the authors"** to stay in Restricted Mode
+3. **Watchtower auto-scans on open** — review findings in the sidebar
+4. **Only click "Trust Folder"** after verifying the results are clean
+
+> **Why Restricted Mode?** Watchtower detects threats — but if you trust a workspace first, VS Code may already execute malicious tasks and scripts before the scan completes. Open untrusted, scan first, trust after.
+
+**Manual scan:** `Ctrl+Shift+P` → `Watchtower: Scan Workspace`
+
+## ⚙️ Configuration
+
+Access settings via **Settings → Extensions → Watchtower** for global settings or the sidebar settings panel for Workspace specific settings.
+
+### Global Settings
+
+| Setting | Default | Description |
+|---|---|---|
+| `watchtower.startupScans` | `OnEveryProject` | `OnEveryProject` · `OnUntrusted` · `Off` |
+| `watchtower.inlineFindings` | `invisible` | Inline highlights: `all` · `invisible` · `none` |
+| `watchtower.autoUninstallMalicious` | `true` | Auto-remove extensions flagged by threat intel |
+| `watchtower.excludedFolders` | `node_modules`, `.git`, `.venv`… | Glob patterns to skip during scanning |
+
+### Workspace Settings
+
+![Workspace settings panel](data/images/project-settings.jpg)
+
+
+## 🎯 Real-World Attack Context
+
+Watchtower was built in response to documented, active attack campaigns targeting developers:
+
+- **[Invisible Unicode / Trojan Source](https://www.aikido.dev/blog/the-return-of-the-invisible-threat-hidden-pua-unicode-hits-github-repositorties)** — hidden code in open source repositories
+- **[Contagious Interview (DPRK)](https://opensourcemalware.com/blog/contagious-code-fake-font)** — North Korean APT groups targeting developers via fake job interviews
+- **[tasks.json infostealers](https://www.threatlocker.com/blog/malicious-vs-code-tasks-json-abuse-enables-multi-stage-infostealer-deployment)** — multi-stage malware via `.vscode` configuration files
+- **[Malicious AI skills](https://opensourcemalware.com/blog/malicious-clawhub-skills-hide-in-plain-sight)** — compromised coding assistant plugins
+- **[IDEsaster](https://maccarita.com/posts/idesaster/)** — IDE-specific attack vectors targeting developer workflows
+
+---
+
+## 🔐 Privacy
+
+- **Runs locally** — no telemetry, no code is sent anywhere
+- **Anonymous threat intel** — extension checks use an external API with no identifying data
+- **Open source** — [audit the code yourself](https://github.com/luisfontes19/watchtower)
+
+---
+
+## 🤝 Contributing
+
+Found a threat pattern Watchtower should detect? Open an issue or PR on [GitHub](https://github.com/luisfontes19/watchtower/issues).
+
+## 📝 License
+
+MIT — see [LICENSE.md](LICENSE.md)

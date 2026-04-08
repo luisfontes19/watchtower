@@ -1,12 +1,13 @@
 {
   "name": "watchtower",
   "displayName": "Watchtower - VSCode Security Scanner",
-  "description": "Protect your development environment from malicious configurations and hidden threats. Scans for invisible code, suspicious tasks, dangerous settings, and compromised configurations.",
+  "description": "Security scanner for VS Code workspaces. Detects invisible Unicode attacks, malicious tasks, dangerous configurations, AI supply chain threats, and compromised extensions. Protect your dev environment.",
   "version": "0.3.0",
   "engines": {
     "vscode": "^1.109.0"
   },
   "categories": [
+    "Linters",
     "Other"
   ],
   "icon": "data/images/logo.png",
@@ -26,7 +27,17 @@
     "ai",
     "vibecoding",
     "vibe",
-    "supply chain"
+    "supply chain",
+    "devsecops",
+    "trojan source",
+    "unicode attack",
+    "SAST",
+    "developer security",
+    "extension security",
+    "code injection",
+    "supply chain security",
+    "workspace trust",
+    "malicious extension"
   ],
   "repository": {
     "type": "git",
