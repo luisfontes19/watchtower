@@ -162,21 +162,37 @@ export class Watchtower {
             const title = `Malicious Extension "${extensionId}"`
             const detail = `The extension "${extensionId}" has been identified as malicious. It is strongly recommended to uninstall it immediately.`
 
-            this.findings.push({
-                file: extensionId,
-                name: title,
-                detail: detail,
-                priority: 'high',
-                type: FindingType.MaliciousExtension
-            })
 
-            vscode.window.showWarningMessage(`🔴 Watchtower: ${title}`, { modal: true, detail: detail }, 'Uninstall').then(action => {
-                if (action === 'Uninstall')
-                    vscode.commands.executeCommand('workbench.extensions.uninstallExtension', extensionId)
 
-            })
+            if (this.settings.getAutoUninstallMalicious()) {
+                vscode.commands.executeCommand('workbench.extensions.uninstallExtension', extensionId)
 
-            this.updateViews()
+                vscode.window.showWarningMessage(
+                    `🔴 Watchtower: ${title}`,
+                    { modal: true, detail: `${detail}\n\nThe extension has been automatically uninstalled. You can disable automatic uninstall in Watchtower settings.` },
+                    'Open Settings'
+                ).then(action => {
+                    if (action === 'Open Settings')
+                        vscode.commands.executeCommand('workbench.action.openSettings', 'watchtower.autoUninstallMalicious')
+                })
+            } else {
+                vscode.window.showWarningMessage(`🔴 Watchtower: ${title}`, { modal: true, detail: detail }, 'Uninstall').then(action => {
+                    if (action === 'Uninstall')
+                        vscode.commands.executeCommand('workbench.extensions.uninstallExtension', extensionId)
+                })
+
+                this.findings.push({
+                    file: extensionId,
+                    name: title,
+                    detail: detail,
+                    priority: 'high',
+                    type: FindingType.MaliciousExtension
+                })
+
+                this.updateViews()
+            }
+
+
 
         }
     }

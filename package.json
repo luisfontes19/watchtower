@@ -80,6 +80,12 @@
           ],
           "default": "invisible"
         },
+        "watchtower.autoUninstallMalicious": {
+          "type": "boolean",
+          "scope": "application",
+          "default": true,
+          "description": "Automatically uninstall extensions identified as malicious"
+        },
         "watchtower.excludedFolders": {
           "type": "array",
           "scope": "application",

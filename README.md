@@ -126,7 +126,13 @@ Scans `.vscode/tasks.json` for dangerous commands including:
 - **Dev Container Review**: Examines container configurations for security risks
 - **AI Agent Monitoring**: Watches for dangerous auto-approval settings
 
-### 🚨 **Real-time Scanning**
+### � **Malicious Extension Protection**
+
+- Checks newly installed extensions against known threat intelligence
+- **Automatic uninstall** of malicious extensions (enabled by default)
+- Configurable via `watchtower.autoUninstallMalicious` setting
+
+### �🚨 **Real-time Scanning**
 
 - **Monitoring** of file changes in the background, for sensitive configurations
 - **Startup scans** when opening new projects

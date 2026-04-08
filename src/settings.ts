@@ -48,6 +48,12 @@ export class Settings {
             .get<InlineFindingType>('inlineFindings', InlineFindingType.invisible)
     }
 
+    public getAutoUninstallMalicious(): boolean {
+        return vscode.workspace
+            .getConfiguration('watchtower')
+            .get<boolean>('autoUninstallMalicious', true)
+    }
+
     public getExcludedFolders(): string[] {
         return vscode.workspace
             .getConfiguration('watchtower')
