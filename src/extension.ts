@@ -95,19 +95,13 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}))
 
-	context.subscriptions.push(
-
-	)
 
 
-
+	watchtower.showWhatsNewIfUpdated(context)
 	watchtower.runInitialScan()
-
 
 	if (vscode.window.activeTextEditor)
 		watchtower.onActiveEditorChanged(vscode.window.activeTextEditor)
-
-
 }
 
 export function deactivate() { }

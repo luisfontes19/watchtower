@@ -14,6 +14,7 @@ import { Settings } from './settings'
 import { ThreatIntel } from './threatIntel/threatIntel'
 import { Finding, FindingType, InlineFindingType, StartupScansMode } from './types'
 
+
 export class Watchtower {
     private static instance: Watchtower
 
@@ -329,6 +330,17 @@ export class Watchtower {
 
     }
 
+    public async showWhatsNewIfUpdated(context: vscode.ExtensionContext): Promise<void> {
+        const currentVersion = context.extension.packageJSON.version as string
+        const lastVersion = this.settings.getLastKnownVersion()
+
+        if (lastVersion === currentVersion) return
+        this.settings.setLastKnownVersion(currentVersion)
+
+        const uri = vscode.Uri.parse("https://raw.githubusercontent.com/luisfontes19/watchtower/refs/heads/main/CHANGELOG.md")
+        vscode.commands.executeCommand('markdown.showPreview', uri)
+
+    }
 
     public async commandScanExtension(): Promise<void> {
         const extensionId = await vscode.window.showInputBox({

@@ -134,4 +134,13 @@ export class Settings {
     public async setKnownExtensions(extensionIds: string[]): Promise<void> {
         await this.globalStorage.update('knownExtensions', extensionIds)
     }
+
+    public getLastKnownVersion(): string | undefined {
+        return this.globalStorage.get<string>('lastKnownVersion')
+    }
+
+    public async setLastKnownVersion(version: string): Promise<void> {
+        await this.globalStorage.update('lastKnownVersion', version)
+    }
+
 }
