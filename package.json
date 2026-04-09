@@ -2,7 +2,7 @@
   "name": "watchtower",
   "displayName": "Watchtower - VSCode Security Scanner",
   "description": "Security scanner for VS Code workspaces. Detects invisible Unicode attacks, malicious tasks, dangerous configurations, AI supply chain threats, and compromised extensions. Protect your dev environment.",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "engines": {
     "vscode": "^1.109.0"
   },
