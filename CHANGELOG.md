@@ -1,5 +1,15 @@
 # Whats New
 
+## [0.3.3]
+
+### Malicious Extension Detection in Workspace Config Files
+
+Watchtower now checks `.vscode/extensions.json` and `.devcontainer` configuration files for extensions flagged as malicious in the Aikido threat intelligence database. If a recommended extension is known to be malicious, you'll get a high-priority finding right in the findings panel.
+
+### Detect Sensitive Environment Variable Injection via Settings
+
+Watchtower now detects when `.vscode/settings.json` overrides sensitive terminal environment variables such as `LD_PRELOAD`, `PYTHONPATH`, `NODE_OPTIONS`, `PATH`, and others. This is a known attack vector in malicious repositories — hijacking these variables can redirect your terminal to load attacker-controlled libraries or executables silently.
+
 ## [0.3.2]
 
 ### Scan Extension for Malware
