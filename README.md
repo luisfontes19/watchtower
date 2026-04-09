@@ -2,10 +2,6 @@
 
 > **Scan untrusted workspaces for malicious code, hidden threats, and supply chain attacks — before you run anything.**
 
-[![GitHub](https://img.shields.io/badge/GitHub-luisfontes19%2Fwatchtower-blue?logo=github)](https://github.com/luisfontes19/watchtower)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
-[![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.109-blue?logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=luisfontes19.watchtower)
-
 ![Watchtower security report](data/images/features1.jpg)
 
 Watchtower automatically scans your VS Code workspace for **invisible Unicode attacks**, **malicious tasks**, **compromised extensions**, and **dangerous AI agent configurations**. Open that sketchy GitHub repo. Clone that interview take-home. Contribute to that open source project. Watchtower checks it first.
@@ -54,7 +50,7 @@ Access settings via **Settings → Extensions → Watchtower** for global settin
 
 ### Workspace Settings
 
-![Workspace settings panel](data/images/project-settings.jpg)
+![Workspace settings panel](data/images/redesigned-settings-panel.jpg)
 
 
 ## 🎯 Real-World Attack Context

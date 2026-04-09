@@ -136,11 +136,11 @@ export class Settings {
     }
 
     public getLastKnownVersion(): string | undefined {
-        return this.globalStorage.get<string>('lastKnownVersion')
+        return this.globalStorage.get<string>('lastVersion')
     }
 
     public async setLastKnownVersion(version: string): Promise<void> {
-        await this.globalStorage.update('lastKnownVersion', version)
+        await this.globalStorage.update('lastVersion', version)
     }
 
 }

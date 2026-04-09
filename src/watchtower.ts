@@ -327,7 +327,6 @@ export class Watchtower {
 
         if (findings.length === 0)
             vscode.window.showInformationMessage('Watchtower: No potential attack vectors found ✅')
-
     }
 
     public async showWhatsNewIfUpdated(context: vscode.ExtensionContext): Promise<void> {
@@ -337,7 +336,7 @@ export class Watchtower {
         if (lastVersion === currentVersion) return
         this.settings.setLastKnownVersion(currentVersion)
 
-        const uri = vscode.Uri.parse("https://raw.githubusercontent.com/luisfontes19/watchtower/refs/heads/main/CHANGELOG.md")
+        const uri = vscode.Uri.joinPath(context.extensionUri, 'CHANGELOG.md')
         vscode.commands.executeCommand('markdown.showPreview', uri)
 
     }

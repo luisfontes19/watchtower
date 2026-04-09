@@ -1,4 +1,30 @@
-# Change Log
+# Whats New
+
+## [0.4.0]
+
+### What's New page
+
+When the extension is updated, the changelog is now automatically shown as a Markdown preview so you never miss what changed. You can also trigger it anytime via the command palette with `Watchtower: What's New?`.
+
+### New Actions panel
+
+A dedicated "Actions" view has been added to the Watchtower sidebar for quick access to common operations.
+
+![New Actions panel](data/images/new-actions-panel.jpg)
+
+### Scan Extension for Malware
+
+New command (`Watchtower: Scan Extension for Malware`) lets you manually check any VS Code extension ID against Aikido threat intelligence to see if it has been flagged as malicious.
+
+### Redesigned Settings panel
+
+The Settings view is now a flat, interactive list. Each setting can be toggled or cycled directly by clicking it, without needing to open VS Code settings.
+
+![Redesigned Settings panel](data/images/redesigned-settings-panel.jpg)
+
+### Bug Fixes
+
+* Malicious extension detection was sometimes failing to flag known bad extensions due to an incorrect filter on the threat intelligence API response.
 
 ## [0.3.1]
 
