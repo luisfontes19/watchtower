@@ -2,22 +2,19 @@ import * as vscode from 'vscode'
 import { Settings } from '../settings'
 import { InlineFindingType, StartupScansMode } from '../types'
 
-type SettingsItemType = 'header' | 'setting' | 'note'
-
 class SettingsItem extends vscode.TreeItem {
     constructor(
         label: string,
-        public readonly itemType: SettingsItemType,
-        description?: string,
-        tooltip?: string,
+        description: string,
+        tooltip: string,
+        icon: vscode.ThemeIcon,
+        command: vscode.Command,
     ) {
-        const collapsible = itemType === 'header'
-            ? vscode.TreeItemCollapsibleState.Expanded
-            : vscode.TreeItemCollapsibleState.None
-        super(label, collapsible)
+        super(label, vscode.TreeItemCollapsibleState.None)
         this.description = description
         this.tooltip = tooltip
-        this.contextValue = itemType
+        this.iconPath = icon
+        this.command = command
     }
 }
 
@@ -36,102 +33,44 @@ export class SettingsTreeProvider implements vscode.TreeDataProvider<SettingsIte
     }
 
     getChildren(element?: SettingsItem): SettingsItem[] {
-        if (!element) {
-            return this.getRootItems()
-        }
-        return this.getChildItems(element)
-    }
+        if (element) return []
 
-    private getRootItems(): SettingsItem[] {
-        const global = new SettingsItem('Global Settings', 'header')
-        global.iconPath = new vscode.ThemeIcon('settings-gear', new vscode.ThemeColor('icon.foreground'))
-
-        const project = new SettingsItem('Project Settings', 'header')
-        project.iconPath = new vscode.ThemeIcon('folder', new vscode.ThemeColor('icon.foreground'))
-
-        return [global, project]
-    }
-
-    private getChildItems(parent: SettingsItem): SettingsItem[] {
         const settings = Settings.getInstance()
-
-        if (parent.label === 'Global Settings') {
-            return this.getGlobalItems(settings)
-        }
-        if (parent.label === 'Project Settings') {
-            return this.getProjectItems(settings)
-        }
-        return []
-    }
-
-    private getGlobalItems(settings: Settings): SettingsItem[] {
         const startupScans = settings.getGlobalStartupScans()
         const inlineFindings = settings.getGlobalInlineFindings()
+        const workspaceStartup = settings.getWorkspaceStartupScan()
+        const workspaceRealTime = settings.getWorkspaceRealTimeDetection()
 
-        const startup = new SettingsItem(
-            'Startup Scans',
-            'setting',
-            startupScansLabel(startupScans),
-            'Click to open settings',
-        )
-        startup.iconPath = new vscode.ThemeIcon('rocket', startupScansColor(startupScans))
-        startup.command = { command: 'workbench.action.openSettings', title: 'Open Settings', arguments: ['watchtower.startupScans'] }
-
-        const inline = new SettingsItem(
-            'Inline Findings',
-            'setting',
-            inlineFindingsLabel(inlineFindings),
-            'Click to open settings',
-        )
-        inline.iconPath = new vscode.ThemeIcon('eye', inlineFindingsColor(inlineFindings))
-        inline.command = { command: 'workbench.action.openSettings', title: 'Open Settings', arguments: ['watchtower.inlineFindings'] }
-
-        return [startup, inline]
-    }
-
-    private getProjectItems(settings: Settings): SettingsItem[] {
-        const workspaceName = vscode.workspace.workspaceFolders?.[0]?.name ?? 'No workspace'
-        const isTrusted = vscode.workspace.isTrusted
-        const workspaceStartup = settings.shouldRunStartupScanForWorkspace()
-        const workspaceRealTime = settings.shouldRunRealtimeScanForWorkspace()
-        const hasProjectOverride = settings.hasExplicitProjectSetting('runStartupScan') || settings.hasExplicitProjectSetting('runRealTimeDetection')
-        const startupScansMode = settings.getGlobalStartupScans()
-        const restrictedEnforced = !hasProjectOverride && startupScansMode === StartupScansMode.onUntrusted && isTrusted
-
-        const workspace = new SettingsItem('Workspace', 'setting', workspaceName, workspaceName)
-        workspace.iconPath = new vscode.ThemeIcon('root-folder', new vscode.ThemeColor('icon.foreground'))
-
-        const trust = new SettingsItem(
-            'Trust Status',
-            'setting',
-            isTrusted ? 'Trusted' : 'Restricted',
-            isTrusted ? 'This workspace is trusted' : 'This workspace is restricted',
-        )
-        trust.iconPath = isTrusted
-            ? new vscode.ThemeIcon('verified-filled', new vscode.ThemeColor('testing.iconPassed'))
-            : new vscode.ThemeIcon('shield', new vscode.ThemeColor('editorWarning.foreground'))
-
-        const startup = new SettingsItem('Run on Startup', 'setting', enabledLabel(workspaceStartup), 'Click to toggle',)
-        startup.iconPath = enabledIcon('play-circle', workspaceStartup)
-        startup.command = { command: 'watchtower.toggleWorkspaceStartupScan', title: 'Toggle Startup Scan' }
-
-        const realtime = new SettingsItem('Real-Time Detection', 'setting', enabledLabel(workspaceRealTime), 'Click to toggle',)
-        realtime.iconPath = enabledIcon('broadcast', workspaceRealTime)
-        realtime.command = { command: 'watchtower.toggleWorkspaceRealTime', title: 'Toggle Real-Time Detection' }
-
-        const items: SettingsItem[] = [workspace, trust, startup, realtime]
-
-        if (restrictedEnforced) {
-            const note = new SettingsItem(
-                '$(warning) Scans inactive — Startup Scans is OnUntrusted and workspace is trusted',
-                'note',
-            )
-            note.iconPath = new vscode.ThemeIcon('warning', new vscode.ThemeColor('editorWarning.foreground'))
-            items.push(note)
-        }
-
-
-        return items
+        return [
+            new SettingsItem(
+                'Startup Scans',
+                startupScansLabel(startupScans),
+                'Click to cycle: On Every Project → On Untrusted → Off',
+                new vscode.ThemeIcon('rocket', startupScansColor(startupScans)),
+                { command: 'watchtower.cycleStartupScans', title: 'Cycle Startup Scans' },
+            ),
+            new SettingsItem(
+                'Inline Findings',
+                inlineFindingsLabel(inlineFindings),
+                'Click to cycle: All → Invisible Only → None',
+                new vscode.ThemeIcon('eye', inlineFindingsColor(inlineFindings)),
+                { command: 'watchtower.cycleInlineFindings', title: 'Cycle Inline Findings' },
+            ),
+            new SettingsItem(
+                '(Project) Run on Startup',
+                enabledLabel(workspaceStartup),
+                'Click to toggle',
+                enabledIcon('play-circle', workspaceStartup),
+                { command: 'watchtower.toggleWorkspaceStartupScan', title: 'Toggle Startup Scan' },
+            ),
+            new SettingsItem(
+                '(Project) Real-Time Detection',
+                enabledLabel(workspaceRealTime),
+                'Click to toggle',
+                enabledIcon('broadcast', workspaceRealTime),
+                { command: 'watchtower.toggleWorkspaceRealTime', title: 'Toggle Real-Time Detection' },
+            ),
+        ]
     }
 }
 

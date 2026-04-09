@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { ActionsTreeProvider } from './providers/actionsTreeProvider'
 import { FindingsOverviewProvider } from './providers/findingsOverviewProvider'
 import { FindingsTreeProvider } from './providers/findingsTreeProvider'
 import { SettingsTreeProvider } from './providers/settingsTreeProvider'
@@ -16,6 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const findingsTree = new FindingsTreeProvider()
 	const findingsOverview = new FindingsOverviewProvider()
 	const settingsTree = new SettingsTreeProvider()
+	const actionsTree = new ActionsTreeProvider()
 
 	const watchtower = Watchtower.getInstance(findingsTree, findingsOverview, settingsTree)
 
@@ -31,6 +33,9 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.registerWebviewViewProvider(FindingsOverviewProvider.viewType, findingsOverview)
 	)
 	context.subscriptions.push(
+		vscode.window.registerTreeDataProvider(ActionsTreeProvider.viewType, actionsTree)
+	)
+	context.subscriptions.push(
 		vscode.window.registerTreeDataProvider(SettingsTreeProvider.viewType, settingsTree)
 	)
 	/////////////////////////////
@@ -38,6 +43,8 @@ export function activate(context: vscode.ExtensionContext) {
 	/////////////////////////////
 	const commands = [
 		vscode.commands.registerCommand('watchtower.scan', watchtower.commandRunScan.bind(watchtower)),
+		vscode.commands.registerCommand('watchtower.cycleStartupScans', watchtower.commandCycleStartupScans.bind(watchtower)),
+		vscode.commands.registerCommand('watchtower.cycleInlineFindings', watchtower.commandCycleInlineFindings.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.toggleWorkspaceStartupScan', watchtower.commandToggleWorkspaceStartupScan.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.toggleWorkspaceRealTime', watchtower.commandToggleWorkspaceRealTime.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.exportToJSON', () => exportToJSON(watchtower.findings, false)),
@@ -52,16 +59,14 @@ export function activate(context: vscode.ExtensionContext) {
 	/////////////////////////////
 	// Real-time listeners
 	/////////////////////////////
-
-	// FILE LISTENERS
 	const watcher = vscode.workspace.createFileSystemWatcher('**/*')
-	watcher.onDidCreate((uri) => watchtower.onFileCreated(uri))
-	watcher.onDidChange((uri) => watchtower.onFileChanged(uri))
+
 
 	const realTimeListeners = [
 		vscode.workspace.onDidOpenTextDocument(watchtower.onFileOpened.bind(watchtower)),
 		vscode.window.onDidChangeActiveTextEditor(watchtower.onActiveEditorChanged.bind(watchtower)),
-		watcher
+		watcher.onDidCreate((uri) => watchtower.onFileCreated(uri)),
+		watcher.onDidChange((uri) => watchtower.onFileChanged(uri)),
 	]
 
 	if (settings.shouldRunRealtimeScanForWorkspace())
@@ -91,7 +96,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}))
 
 	context.subscriptions.push(
-		vscode.extensions.onDidChange(watchtower.onExtensionsChanged.bind(watchtower))
+
 	)
 
 

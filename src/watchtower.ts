@@ -12,7 +12,7 @@ import { FindingsTreeProvider } from './providers/findingsTreeProvider'
 import { SettingsTreeProvider } from './providers/settingsTreeProvider'
 import { Settings } from './settings'
 import { ThreatIntel } from './threatIntel/threatIntel'
-import { Finding, FindingType, InlineFindingType } from './types'
+import { Finding, FindingType, InlineFindingType, StartupScansMode } from './types'
 
 export class Watchtower {
     private static instance: Watchtower
@@ -273,6 +273,35 @@ export class Watchtower {
 
         activeEditor.setDecorations(this.highlightDecorationType, decorations)
 
+    }
+
+
+    public async commandCycleStartupScans(): Promise<void> {
+        const current = this.settings.getGlobalStartupScans()
+        const order = [StartupScansMode.onEveryProject, StartupScansMode.onUntrusted, StartupScansMode.off]
+        const next = order[(order.indexOf(current) + 1) % order.length]
+        await this.settings.setGlobalStartupScans(next)
+        this.settingsTree.refresh()
+    }
+
+    public async commandCycleInlineFindings(): Promise<void> {
+        const current = this.settings.getGlobalInlineFindings()
+        const order = [InlineFindingType.all, InlineFindingType.invisible, InlineFindingType.none]
+        const next = order[(order.indexOf(current) + 1) % order.length]
+        await this.settings.setGlobalInlineFindings(next)
+        this.settingsTree.refresh()
+    }
+
+    public async commandToggleWorkspaceStartupScan(): Promise<void> {
+        const current = this.settings.getWorkspaceStartupScan()
+        await this.settings.setWorkspaceStartupScan(!current)
+        this.settingsTree.refresh()
+    }
+
+    public async commandToggleWorkspaceRealTime(): Promise<void> {
+        const current = this.settings.getWorkspaceRealTimeDetection()
+        await this.settings.setWorkspaceRealTimeDetection(!current)
+        this.settingsTree.refresh()
     }
 
     public async runInitialScan(): Promise<void> {

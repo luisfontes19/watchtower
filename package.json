@@ -144,6 +144,11 @@
           "initialSize": 1
         },
         {
+          "id": "watchtower.actions",
+          "name": "Actions",
+          "initialSize": 1
+        },
+        {
           "id": "watchtower.settings",
           "name": "Settings",
           "initialSize": 1
@@ -171,6 +176,14 @@
         "icon": "$(open-preview)"
       },
       {
+        "command": "watchtower.cycleStartupScans",
+        "title": "Watchtower: Cycle Startup Scans Mode"
+      },
+      {
+        "command": "watchtower.cycleInlineFindings",
+        "title": "Watchtower: Cycle Inline Findings Mode"
+      },
+      {
         "command": "watchtower.toggleWorkspaceStartupScan",
         "title": "Watchtower: Toggle Workspace Startup Scan"
       },
@@ -180,6 +193,24 @@
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "watchtower.cycleStartupScans",
+          "when": "false"
+        },
+        {
+          "command": "watchtower.cycleInlineFindings",
+          "when": "false"
+        },
+        {
+          "command": "watchtower.toggleWorkspaceStartupScan",
+          "when": "false"
+        },
+        {
+          "command": "watchtower.toggleWorkspaceRealTime",
+          "when": "false"
+        }
+      ],
       "view/title": [
         {
           "command": "watchtower.scan",
