@@ -2,7 +2,7 @@ import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { SUSPICIOUS_COMMANDS } from '../dangerousCommands'
 import { Finding, FindingType } from '../types'
-import { rangeOfKeyInText } from '../utils'
+import { rangeFromJsonNode, rangeOfKeyInText } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
 
 
@@ -24,6 +24,14 @@ export class SettingsAnalyzer extends StaticAnalyzer {
         // PHP
         "php.validate.executablePath",
     ]
+
+    static readonly TERMINAL_ENV_KEYS = [
+        'terminal.integrated.env.linux',
+        'terminal.integrated.env.osx',
+        'terminal.integrated.env.windows',
+    ]
+
+    static readonly SENSITIVE_ENV_VARS = ['LD_PRELOAD', 'DYLD_INSERT_LIBRARIES', 'LD_LIBRARY_PATH', 'DYLD_LIBRARY_PATH', 'PYTHONPATH', 'PYTHONSTARTUP', 'NODE_PATH', 'NODE_OPTIONS', 'RUBYLIB', 'PERL5LIB']
 
     alertOnEditedInBackground(): boolean {
         return true
@@ -72,6 +80,8 @@ export class SettingsAnalyzer extends StaticAnalyzer {
         if (aiConfigIssue) {
             findings.push(aiConfigIssue)
         }
+
+        findings.push(...this.checkTerminalEnvOverrides(json, uri, textContent))
 
         return findings
     }
@@ -154,6 +164,34 @@ export class SettingsAnalyzer extends StaticAnalyzer {
             file: vscode.workspace.asRelativePath(uri, false),
             range
         }
+    }
+
+    private checkTerminalEnvOverrides(json: Record<string, any>, uri: vscode.Uri, text: string): Finding[] {
+        const findings: Finding[] = []
+        const file = vscode.workspace.asRelativePath(uri, false)
+
+        for (const key of SettingsAnalyzer.TERMINAL_ENV_KEYS) {
+            const envVars = json[key]
+            if (!envVars || typeof envVars !== 'object') continue
+
+            for (const [varName, value] of Object.entries(envVars as Record<string, string>)) {
+                const upperVar = varName.toUpperCase()
+                const range = rangeFromJsonNode(text, [key, varName])
+
+                if (upperVar === 'PATH' || SettingsAnalyzer.SENSITIVE_ENV_VARS.includes(upperVar)) {
+                    findings.push({
+                        type: FindingType.Binary,
+                        name: `Terminal environment variable '${varName}' overridden in .vscode/settings.json`,
+                        detail: `\`${key}\` sets \`${varName}=${value}\`. Overriding this variable can be used to hijack binaries, inject libraries, or redirect module resolution to attacker-controlled code.`,
+                        priority: 'high',
+                        file,
+                        range
+                    })
+                }
+            }
+        }
+
+        return findings
     }
 
     private containsSensitiveFilePattern(autoApprove: any): boolean {

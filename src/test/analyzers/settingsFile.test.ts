@@ -187,5 +187,79 @@ suite('SettingsAnalyzer', () => {
             assert.ok(types.includes(FindingType.Binary))
             assert.ok(types.includes(FindingType.AutoApprove))
         })
+
+        suite('checkTerminalEnvOverrides', () => {
+
+            test('detects PATH override as high priority', async () => {
+                const content = new TextEncoder().encode(JSON.stringify({
+                    "terminal.integrated.env.linux": { "PATH": "/attacker/bin" }
+                }))
+                const findings = await analyzer.checkFile(fakeUri, content)
+                const f = findings.find(f => f.name.includes("'PATH'"))
+                assert.ok(f)
+                assert.strictEqual(f!.type, FindingType.Binary)
+                assert.strictEqual(f!.priority, 'high')
+            })
+
+            test('detects LD_PRELOAD as high priority', async () => {
+                const content = new TextEncoder().encode(JSON.stringify({
+                    "terminal.integrated.env.linux": { "LD_PRELOAD": "/evil/hook.so" }
+                }))
+                const findings = await analyzer.checkFile(fakeUri, content)
+                const f = findings.find(f => f.name.includes("'LD_PRELOAD'"))
+                assert.ok(f)
+                assert.strictEqual(f!.type, FindingType.Binary)
+                assert.strictEqual(f!.priority, 'high')
+                assert.ok(f!.detail.includes('/evil/hook.so'))
+            })
+
+            test('detects DYLD_INSERT_LIBRARIES as high priority', async () => {
+                const content = new TextEncoder().encode(JSON.stringify({
+                    "terminal.integrated.env.osx": { "DYLD_INSERT_LIBRARIES": "/evil/lib.dylib" }
+                }))
+                const findings = await analyzer.checkFile(fakeUri, content)
+                const f = findings.find(f => f.name.includes("'DYLD_INSERT_LIBRARIES'"))
+                assert.ok(f)
+                assert.strictEqual(f!.priority, 'high')
+            })
+
+            test('detects PYTHONPATH as high priority', async () => {
+                const content = new TextEncoder().encode(JSON.stringify({
+                    "terminal.integrated.env.linux": { "PYTHONPATH": "/attacker/modules" }
+                }))
+                const findings = await analyzer.checkFile(fakeUri, content)
+                const f = findings.find(f => f.name.includes("'PYTHONPATH'"))
+                assert.ok(f)
+                assert.strictEqual(f!.priority, 'high')
+            })
+
+            test('detects NODE_OPTIONS as high priority', async () => {
+                const content = new TextEncoder().encode(JSON.stringify({
+                    "terminal.integrated.env.windows": { "NODE_OPTIONS": "--require /evil/preload.js" }
+                }))
+                const findings = await analyzer.checkFile(fakeUri, content)
+                const f = findings.find(f => f.name.includes("'NODE_OPTIONS'"))
+                assert.ok(f)
+                assert.strictEqual(f!.priority, 'high')
+            })
+
+            test('does not flag harmless env vars', async () => {
+                const content = new TextEncoder().encode(JSON.stringify({
+                    "terminal.integrated.env.linux": { "MY_APP_ENV": "production" }
+                }))
+                const findings = await analyzer.checkFile(fakeUri, content)
+                assert.strictEqual(findings.filter(f => f.name.includes('MY_APP_ENV')).length, 0)
+            })
+
+            test('detects issues across all three platform keys', async () => {
+                const content = new TextEncoder().encode(JSON.stringify({
+                    "terminal.integrated.env.linux": { "LD_PRELOAD": "/evil.so" },
+                    "terminal.integrated.env.osx": { "DYLD_INSERT_LIBRARIES": "/evil.dylib" },
+                    "terminal.integrated.env.windows": { "PATH": "C:\\attacker" }
+                }))
+                const findings = await analyzer.checkFile(fakeUri, content)
+                assert.strictEqual(findings.filter(f => f.type === FindingType.Binary && !f.name.includes('Interpreter')).length, 3)
+            })
+        })
     })
 })

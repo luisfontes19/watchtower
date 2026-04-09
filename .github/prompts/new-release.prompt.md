@@ -23,4 +23,4 @@ Then you need to do the following tasks:
 
 2. Commit the changes
 
-3. Run the npm run bump [major|minor|patch] command. This will bump the version in package.json and create a new git commit with the changes and tag the commit with the new version. Just run the command, everything else is automatically done by the script.
+3. Run the npm run bump:[major|minor|patch] command. This will bump the version in package.json and create a new git commit with the changes and tag the commit with the new version. Just run the command, everything else is automatically done by the script.

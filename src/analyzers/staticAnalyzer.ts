@@ -43,5 +43,12 @@ export abstract class StaticAnalyzer {
         const activeEditor = vscode.window.activeTextEditor
         return !activeEditor || activeEditor.document.uri.fsPath !== uri.fsPath
     }
-}
 
+    protected async ensureFileContent(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Uint8Array> {
+        if (content)
+            return Promise.resolve(content)
+        else
+            return await vscode.workspace.fs.readFile(uri)
+
+    }
+}
