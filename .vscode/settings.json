@@ -10,11 +10,4 @@
     },
     // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
     "js/ts.tsc.autoDetect": "off",
-    // auto approve some benign terminal commands to avoid the confirmation prompt every time
-    "chat.tools.terminal.autoApprove": {
-        "git tag": true,
-        "git log": true,
-        "git show": true,
-        "git diff": true
-    }
 }

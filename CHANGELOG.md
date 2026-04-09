@@ -1,30 +1,30 @@
 # Whats New
 
-## [0.4.0]
-
-### What's New page
-
-When the extension is updated, the changelog is now automatically shown as a Markdown preview so you never miss what changed. You can also trigger it anytime via the command palette with `Watchtower: What's New?`.
-
-### New Actions panel
-
-A dedicated "Actions" view has been added to the Watchtower sidebar for quick access to common operations.
-
-![New Actions panel](data/images/new-actions-panel.jpg)
+## [0.3.2]
 
 ### Scan Extension for Malware
 
-New command (`Watchtower: Scan Extension for Malware`) lets you manually check any VS Code extension ID against Aikido threat intelligence to see if it has been flagged as malicious.
+You can now manually check any extension by ID using the new **Watchtower: Scan Extension for Malware** command from the command palette. It will query the Aikido threat intelligence database and let you know immediately if the extension is flagged.
 
-### Redesigned Settings panel
+### New Actions Panel
 
-The Settings view is now a flat, interactive list. Each setting can be toggled or cycled directly by clicking it, without needing to open VS Code settings.
+A new **Actions** panel has been added to the Watchtower sidebar, giving you quick access to common security actions without digging through the command palette.
 
-![Redesigned Settings panel](data/images/redesigned-settings-panel.jpg)
+![Actions Panel](data/images/new-actions-panel.jpg)
+
+### Redesigned Settings Panel
+
+The Settings panel has been redesigned. You can now toggle and cycle settings directly from the panel — no need to open VS Code settings.
+
+![Redesigned Settings Panel](data/images/redesigned-settings-panel.jpg)
+
+### What's New Page
+
+Watchtower now automatically shows the changelog whenever it updates, so you're always aware of what's changed.
 
 ### Bug Fixes
 
-* Malicious extension detection was sometimes failing to flag known bad extensions due to an incorrect filter on the threat intelligence API response.
+* Fixed an issue where malicious extension detection was not correctly identifying flagged extensions. Some threats could go undetected due to an incorrect filter in the threat intelligence check.
 
 ## [0.3.1]
 
