@@ -67,6 +67,18 @@ export function activate(context: vscode.ExtensionContext) {
 		realTimeListeners.forEach(listener => context.subscriptions.push(listener))
 
 
+	/////////////////////////////
+	// Other listeners
+	/////////////////////////////
+
+	const listeners = [
+		vscode.extensions.onDidChange(watchtower.onExtensionsChanged.bind(watchtower)),
+
+	]
+
+	listeners.forEach(listener => context.subscriptions.push(listener))
+
+
 	// WORKSPACE TRUST LISTENER
 	context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(() => {
 		console.log("Workspace trust granted")

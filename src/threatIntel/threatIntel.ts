@@ -25,7 +25,7 @@ export class ThreatIntel {
 
             const results: AikidoMalwareResult[] = await response.json() as AikidoMalwareResult[]
 
-            return results.some(r => r.package_name === extensionId && r.status === "MALWARE")
+            return results.some(r => r.status === "MALWARE")
         } catch (error) {
             console.error(`[Watchtower] Failed to check threat intel for ${extensionId}:`, error)
             return false
