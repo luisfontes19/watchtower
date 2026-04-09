@@ -43,6 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('watchtower.exportToJSON', () => exportToJSON(watchtower.findings, false)),
 		vscode.commands.registerCommand('watchtower.showReport', () => showHTMLReport(watchtower.findings, context.extensionUri)),
 		vscode.commands.registerCommand('watchtower.revealFinding', (finding) => findingsTree.revealFinding(finding)),
+		vscode.commands.registerCommand('watchtower.scanExtension', watchtower.commandScanExtension.bind(watchtower)),
 	]
 
 	commands.forEach(command => context.subscriptions.push(command))

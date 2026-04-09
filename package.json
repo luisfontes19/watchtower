@@ -152,6 +152,10 @@
     },
     "commands": [
       {
+        "command": "watchtower.scanExtension",
+        "title": "Watchtower: Scan Extension for Malware"
+      },
+      {
         "command": "watchtower.scan",
         "title": "Watchtower: Scan Workspace",
         "icon": "$(search-refresh)"

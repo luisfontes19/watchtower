@@ -301,38 +301,27 @@ export class Watchtower {
     }
 
 
-    public async commandToggleWorkspaceStartupScan(): Promise<void> {
-        const current = this.settings.getWorkspaceStartupScan()
-        const action = current ? 'Disable' : 'Enable'
-        const detail = current
-            ? 'Watchtower will no longer automatically scan this workspace when you open it. You can still run scans manually via the command palette.'
-            : 'Watchtower will automatically scan this workspace for threats every time you open it.'
-        const confirm = await vscode.window.showWarningMessage(
-            `${action} Startup Scan for this workspace?`,
-            { modal: true, detail },
-            action
-        )
-        if (confirm === action) {
-            await this.settings.setWorkspaceStartupScan(!current)
-            this.settingsTree.refresh()
-        }
-    }
+    public async commandScanExtension(): Promise<void> {
+        const extensionId = await vscode.window.showInputBox({
+            prompt: 'Enter the extension ID to scan (e.g. publisher.extension-name)',
+            placeHolder: 'publisher.extension-name',
+            validateInput: (value) => value.trim() ? null : 'Extension ID is required',
+        })
 
-    public async commandToggleWorkspaceRealTime(): Promise<void> {
-        const current = this.settings.getWorkspaceRealTimeDetection()
-        const action = current ? 'Disable' : 'Enable'
-        const detail = current
-            ? 'Watchtower will no longer monitor file changes in this workspace. New or modified files will not be checked for threats until you run a manual scan.'
-            : 'Watchtower will monitor file changes in this workspace and automatically check new or modified files for threats.'
-        const confirm = await vscode.window.showWarningMessage(
-            `${action} Real-Time Detection for this workspace?`,
-            { modal: true, detail },
-            action
+        if (!extensionId) return
+
+        await vscode.window.withProgress(
+            { location: vscode.ProgressLocation.Notification, title: `Scanning extension ${extensionId}...` },
+            async () => {
+                const isMalicious = await this.threatIntel.isExtensionMalicious(extensionId.trim())
+
+                if (isMalicious)
+                    vscode.window.showWarningMessage(`❗️ Extension "${extensionId}" has been flagged as malicious!`)
+                else
+                    vscode.window.showInformationMessage(`✅ Extension "${extensionId}" appears clean.`)
+
+            },
         )
-        if (confirm === action) {
-            await this.settings.setWorkspaceRealTimeDetection(!current)
-            this.settingsTree.refresh()
-        }
     }
 
     public async scanFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>, fileEdited: boolean = false): Promise<Finding[]> {
