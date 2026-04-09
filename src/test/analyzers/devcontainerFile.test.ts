@@ -2,6 +2,7 @@ import * as assert from 'assert'
 import * as vscode from 'vscode'
 import '../../analyzers/agentsFile' // load before devcontainerFile to resolve circular dep
 import { DevContainerAnalyzer } from '../../analyzers/devcontainerFile'
+import { ExtensionsAnalyzer } from '../../analyzers/extensions'
 import { FindingType } from '../../types'
 
 suite('DevContainerAnalyzer', () => {
@@ -117,6 +118,91 @@ suite('DevContainerAnalyzer', () => {
             }
             const findings = analyzer.checkMcpServers(json, fakeUri, JSON.stringify(json))
             assert.ok(findings[0].name.includes('devcontainer.json'))
+        })
+    })
+
+    suite('checkExtensions', () => {
+        let originalAnalyze: typeof ExtensionsAnalyzer.analyze
+
+        setup(() => {
+            originalAnalyze = ExtensionsAnalyzer.analyze
+        })
+
+        teardown(() => {
+            ExtensionsAnalyzer.analyze = originalAnalyze
+        })
+
+        test('returns empty findings when no customizations', async () => {
+            ExtensionsAnalyzer.analyze = async () => []
+            const json = {}
+            const findings = analyzer.checkExtensions(json, fakeUri, JSON.stringify(json))
+            await Promise.resolve()
+            assert.strictEqual(findings.length, 0)
+        })
+
+        test('returns empty findings when extensions list is empty', async () => {
+            ExtensionsAnalyzer.analyze = async () => []
+            const json = { customizations: { vscode: { extensions: [] } } }
+            const findings = analyzer.checkExtensions(json, fakeUri, JSON.stringify(json))
+            await Promise.resolve()
+            assert.strictEqual(findings.length, 0)
+        })
+
+        test('flags aikidosecurity.aikido-endpoint-test as malicious', async () => {
+            ExtensionsAnalyzer.analyze = async () => [
+                { extensionId: 'aikidosecurity.aikido-endpoint-test', malicious: true }
+            ]
+            const json = {
+                customizations: { vscode: { extensions: ['aikidosecurity.aikido-endpoint-test'] } }
+            }
+            const findings = analyzer.checkExtensions(json, fakeUri, JSON.stringify(json))
+            await Promise.resolve()
+            assert.strictEqual(findings.length, 1)
+            assert.strictEqual(findings[0].type, FindingType.MaliciousExtension)
+            assert.ok(findings[0].name.includes('aikidosecurity.aikido-endpoint-test'))
+            assert.strictEqual(findings[0].priority, 'medium')
+        })
+
+        test('does not flag luisfontes19.watchtower (non-malicious)', async () => {
+            ExtensionsAnalyzer.analyze = async () => [
+                { extensionId: 'luisfontes19.watchtower', malicious: false }
+            ]
+            const json = {
+                customizations: { vscode: { extensions: ['luisfontes19.watchtower'] } }
+            }
+            const findings = analyzer.checkExtensions(json, fakeUri, JSON.stringify(json))
+            await Promise.resolve()
+            assert.strictEqual(findings.length, 0)
+        })
+
+        test('flags only malicious extensions in a mixed list', async () => {
+            ExtensionsAnalyzer.analyze = async () => [
+                { extensionId: 'aikidosecurity.aikido-endpoint-test', malicious: true },
+                { extensionId: 'luisfontes19.watchtower', malicious: false }
+            ]
+            const json = {
+                customizations: {
+                    vscode: {
+                        extensions: ['aikidosecurity.aikido-endpoint-test', 'luisfontes19.watchtower']
+                    }
+                }
+            }
+            const findings = analyzer.checkExtensions(json, fakeUri, JSON.stringify(json))
+            await Promise.resolve()
+            assert.strictEqual(findings.length, 1)
+            assert.ok(findings[0].name.includes('aikidosecurity.aikido-endpoint-test'))
+        })
+
+        test('finding detail mentions devcontainer.json', async () => {
+            ExtensionsAnalyzer.analyze = async () => [
+                { extensionId: 'aikidosecurity.aikido-endpoint-test', malicious: true }
+            ]
+            const json = {
+                customizations: { vscode: { extensions: ['aikidosecurity.aikido-endpoint-test'] } }
+            }
+            const findings = analyzer.checkExtensions(json, fakeUri, JSON.stringify(json))
+            await Promise.resolve()
+            assert.ok(findings[0].detail.includes('devcontainer.json'))
         })
     })
 })
