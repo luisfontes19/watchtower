@@ -51,4 +51,9 @@ export abstract class StaticAnalyzer {
             return await vscode.workspace.fs.readFile(uri)
 
     }
+
+    protected parentFolderRelativePath(uri: vscode.Uri): string {
+        const parent = vscode.Uri.joinPath(uri, '..')
+        return vscode.workspace.asRelativePath(parent, false)
+    }
 }

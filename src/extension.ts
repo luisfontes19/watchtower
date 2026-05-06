@@ -54,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
 	]
 
 	commands.forEach(command => context.subscriptions.push(command))
-
+	console.log(vscode.workspace.getConfiguration('security.workspace.trust'))
 
 	/////////////////////////////
 	// Real-time listeners

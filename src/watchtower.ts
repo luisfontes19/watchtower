@@ -1,6 +1,8 @@
 import * as vscode from 'vscode'
 import { AgentsAnalyzer } from './analyzers/agentsFile'
 import { DevContainerAnalyzer } from './analyzers/devcontainerFile'
+import { GitHooksAnalyzer } from './analyzers/gitHooks'
+import { HooksPathReferenceAnalyzer } from './analyzers/hooksPathReference'
 import { InvisibleCodeAnalyzer } from './analyzers/invisibleCode'
 import { JsonFile } from './analyzers/jsonFile'
 import { LaunchAnalyzer } from './analyzers/launchFile'
@@ -35,6 +37,8 @@ export class Watchtower {
         this.allAnalyzers = [
             new AgentsAnalyzer(),
             new DevContainerAnalyzer(),
+            new GitHooksAnalyzer(),
+            new HooksPathReferenceAnalyzer(),
             new InvisibleCodeAnalyzer(),
             new JsonFile(),
             new TaskAnalyzer(),
@@ -91,10 +95,11 @@ export class Watchtower {
         if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
 
         const findings = await this.scanFile(uri, undefined, true)
-        if (findings.length > 0) {
-            this.findings.push(...findings)
+        const newFindings = findings.filter(f => !this.isDuplicateFolderFinding(f, this.findings))
+        if (newFindings.length > 0) {
+            this.findings.push(...newFindings)
             this.updateViews()
-            this.alertFindings(findings)
+            this.alertFindings(newFindings)
         }
     }
 
@@ -118,10 +123,12 @@ export class Watchtower {
         if (findings.length === 0) return
 
         // if a silent file change finding already exists for this file, don't add another one, but still get alerted
-        const newFindings = findings.filter(f =>
-            f.type !== FindingType.SilentFileChange ||
-            !this.findings.some(existing => existing.file === f.file && existing.type === FindingType.SilentFileChange)
-        )
+        const newFindings = findings.filter(f => {
+            if (f.type === FindingType.SilentFileChange && this.findings.some(existing => existing.file === f.file && existing.type === FindingType.SilentFileChange))
+                return false
+            if (this.isDuplicateFolderFinding(f, this.findings)) return false
+            return true
+        })
         this.findings.push(...newFindings)
         this.updateViews()
         this.alertFindings(findings)
@@ -229,7 +236,10 @@ export class Watchtower {
                 progress.report({ increment: incrementPerFile, message: `Analyzing ${relativePath} (${i + 1}/${totalFiles})` })
 
                 const fileFindings = await this.scanFile(file)
-                findings.push(...fileFindings)
+                for (const f of fileFindings) {
+                    if (this.isDuplicateFolderFinding(f, findings)) continue
+                    findings.push(f)
+                }
             }
 
             this.findings = findings
@@ -394,6 +404,11 @@ export class Watchtower {
 
         return findings
 
+    }
+
+    private isDuplicateFolderFinding(finding: Finding, existing: Finding[]): boolean {
+        if (!finding.file.endsWith('/')) return false
+        return existing.some(e => e.file === finding.file && e.type === finding.type)
     }
 
 
