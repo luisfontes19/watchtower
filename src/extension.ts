@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-import { ActionsTreeProvider } from './providers/actionsTreeProvider'
 import { FindingsOverviewProvider } from './providers/findingsOverviewProvider'
 import { FindingsTreeProvider } from './providers/findingsTreeProvider'
 import { SettingsTreeProvider } from './providers/settingsTreeProvider'
@@ -17,7 +16,6 @@ export function activate(context: vscode.ExtensionContext) {
 	const findingsTree = new FindingsTreeProvider()
 	const findingsOverview = new FindingsOverviewProvider()
 	const settingsTree = new SettingsTreeProvider()
-	const actionsTree = new ActionsTreeProvider()
 
 	const watchtower = Watchtower.getInstance(findingsTree, findingsOverview, settingsTree)
 
@@ -31,9 +29,6 @@ export function activate(context: vscode.ExtensionContext) {
 	)
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(FindingsOverviewProvider.viewType, findingsOverview)
-	)
-	context.subscriptions.push(
-		vscode.window.registerTreeDataProvider(ActionsTreeProvider.viewType, actionsTree)
 	)
 	context.subscriptions.push(
 		vscode.window.registerTreeDataProvider(SettingsTreeProvider.viewType, settingsTree)
@@ -55,6 +50,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('watchtower.toggleWorkspaceRule', (ruleId: string) => watchtower.commandToggleWorkspaceRule(ruleId)),
 		vscode.commands.registerCommand('watchtower.editWorkspaceExcludedFiles', watchtower.commandEditWorkspaceExcludedFiles.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.editWorkspaceExcludedFolders', watchtower.commandEditWorkspaceExcludedFolders.bind(watchtower)),
+		vscode.commands.registerCommand('watchtower.toggleAutoUninstallMalicious', watchtower.commandToggleAutoUninstallMalicious.bind(watchtower)),
 	]
 
 	commands.forEach(command => context.subscriptions.push(command))

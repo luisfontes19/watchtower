@@ -326,6 +326,12 @@ export class Watchtower {
         this.settingsTree.refresh()
     }
 
+    public async commandToggleAutoUninstallMalicious(): Promise<void> {
+        const current = this.settings.getAutoUninstallMalicious()
+        await vscode.workspace.getConfiguration('watchtower').update('autoUninstallMalicious', !current, vscode.ConfigurationTarget.Global)
+        this.settingsTree.refresh()
+    }
+
     public async commandEditWorkspaceExcludedFiles(): Promise<void> {
         const current = this.settings.getWorkspaceExcludedFiles()
         const input = await vscode.window.showInputBox({

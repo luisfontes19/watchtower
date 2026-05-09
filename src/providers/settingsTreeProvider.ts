@@ -21,18 +21,24 @@ class SettingsItem extends vscode.TreeItem {
 }
 
 class RulesGroupItem extends vscode.TreeItem {
-    constructor() {
-        super('Rules', vscode.TreeItemCollapsibleState.Collapsed)
-        this.tooltip = 'Toggle individual security rules on or off'
+    constructor(label: string, tooltip: string) {
+        super(label, vscode.TreeItemCollapsibleState.Collapsed)
+        this.tooltip = tooltip
         this.iconPath = new vscode.ThemeIcon('checklist')
     }
 }
 
-class ProjectRulesGroupItem extends vscode.TreeItem {
+class GlobalSettingsGroupItem extends vscode.TreeItem {
     constructor() {
-        super('(Project) Rules', vscode.TreeItemCollapsibleState.Collapsed)
-        this.tooltip = 'Toggle individual security rules on or off for this project'
-        this.iconPath = new vscode.ThemeIcon('checklist')
+        super('Global Settings', vscode.TreeItemCollapsibleState.Collapsed)
+        this.iconPath = new vscode.ThemeIcon('globe')
+    }
+}
+
+class ProjectSettingsGroupItem extends vscode.TreeItem {
+    constructor() {
+        super('Project Settings', vscode.TreeItemCollapsibleState.Collapsed)
+        this.iconPath = new vscode.ThemeIcon('root-folder')
     }
 }
 
@@ -50,21 +56,68 @@ export class SettingsTreeProvider implements vscode.TreeDataProvider<vscode.Tree
         return element
     }
 
+    private globalRulesGroup = new RulesGroupItem('Rules', 'Toggle individual security rules on or off')
+    private projectRulesGroup = new RulesGroupItem('Rules', 'Toggle individual security rules on or off for this project')
+    private globalSettingsGroup = new GlobalSettingsGroupItem()
+    private projectSettingsGroup = new ProjectSettingsGroupItem()
+
     getChildren(element?: vscode.TreeItem): vscode.TreeItem[] {
         if (!element) {
-            const settings = Settings.getInstance()
+            return [
+                new SettingsItem(
+                    'Scan Workspace (Now)',
+                    '',
+                    'Run a full security scan on the current workspace',
+                    new vscode.ThemeIcon('search'),
+                    { command: 'watchtower.scan', title: 'Scan Workspace' },
+                ),
+                new SettingsItem(
+                    'Scan Extension',
+                    '',
+                    'Check if a VS Code extension has been flagged as malicious',
+                    new vscode.ThemeIcon('extensions'),
+                    { command: 'watchtower.scanExtension', title: 'Scan Extension for Malware' },
+                ),
+                new SettingsItem(
+                    'View Report',
+                    '',
+                    'View the full findings report',
+                    new vscode.ThemeIcon('open-preview'),
+                    { command: 'watchtower.showReport', title: 'View Report' },
+                ),
+
+                this.globalSettingsGroup,
+                this.projectSettingsGroup,
+            ]
+        }
+
+        const settings = Settings.getInstance()
+
+        if (element === this.globalSettingsGroup) {
             const startupScans = settings.getGlobalStartupScans()
             const inlineFindings = settings.getGlobalInlineFindings()
-            const workspaceStartup = settings.getWorkspaceStartupScan()
-            const workspaceRealTime = settings.getWorkspaceRealTimeDetection()
 
             return [
                 new SettingsItem(
-                    'Startup Scans',
-                    startupScansLabel(startupScans),
-                    'Click to cycle: On Every Project → On Untrusted → Off',
-                    new vscode.ThemeIcon('rocket', startupScansColor(startupScans)),
-                    { command: 'watchtower.cycleStartupScans', title: 'Cycle Startup Scans' },
+                    'Auto Uninstall Extensions',
+                    enabledLabel(settings.getAutoUninstallMalicious()),
+                    'Click to toggle automatic uninstall of malicious extensions',
+                    enabledIcon('extensions', settings.getAutoUninstallMalicious()),
+                    { command: 'watchtower.toggleAutoUninstallMalicious', title: 'Toggle Auto Uninstall' },
+                ),
+                new SettingsItem(
+                    'Disabled Rules',
+                    excludedPatternsLabel(settings.getDisabledRules()),
+                    'Click to open disabled rules setting',
+                    new vscode.ThemeIcon('list-filter'),
+                    { command: 'workbench.action.openSettings', title: 'Open Setting', arguments: ['watchtower.disabledRules'] },
+                ),
+                new SettingsItem(
+                    'Excluded Folders',
+                    excludedPatternsLabel(settings.getExcludedFolders()),
+                    'Click to open excluded folders setting',
+                    new vscode.ThemeIcon('folder'),
+                    { command: 'workbench.action.openSettings', title: 'Open Setting', arguments: ['watchtower.excludedFolders'] },
                 ),
                 new SettingsItem(
                     'Inline Findings',
@@ -74,40 +127,62 @@ export class SettingsTreeProvider implements vscode.TreeDataProvider<vscode.Tree
                     { command: 'watchtower.cycleInlineFindings', title: 'Cycle Inline Findings' },
                 ),
                 new SettingsItem(
-                    '(Project) Run on Startup',
-                    enabledLabel(workspaceStartup),
-                    'Click to toggle',
-                    enabledIcon('play-circle', workspaceStartup),
-                    { command: 'watchtower.toggleWorkspaceStartupScan', title: 'Toggle Startup Scan' },
+                    'Show Overview',
+                    '',
+                    'Click to open show overview setting',
+                    new vscode.ThemeIcon('layout'),
+                    { command: 'workbench.action.openSettings', title: 'Open Setting', arguments: ['watchtower.showOverview'] },
                 ),
                 new SettingsItem(
-                    '(Project) Real-Time Detection',
-                    enabledLabel(workspaceRealTime),
-                    'Click to toggle',
-                    enabledIcon('broadcast', workspaceRealTime),
-                    { command: 'watchtower.toggleWorkspaceRealTime', title: 'Toggle Real-Time Detection' },
+                    'Startup Scans',
+                    startupScansLabel(startupScans),
+                    'Click to cycle: On Every Project → On Untrusted → Off',
+                    new vscode.ThemeIcon('rocket', startupScansColor(startupScans)),
+                    { command: 'watchtower.cycleStartupScans', title: 'Cycle Startup Scans' },
                 ),
+                this.globalRulesGroup,
+            ]
+        }
+
+        if (element === this.projectSettingsGroup) {
+            const workspaceStartup = settings.getWorkspaceStartupScan()
+            const workspaceRealTime = settings.getWorkspaceRealTimeDetection()
+
+            return [
                 new SettingsItem(
-                    '(Project) Excluded Files',
+                    'Excluded Files',
                     excludedPatternsLabel(settings.getWorkspaceExcludedFiles()),
                     'Click to edit file exclusion patterns for this project',
                     new vscode.ThemeIcon('exclude'),
                     { command: 'watchtower.editWorkspaceExcludedFiles', title: 'Edit Excluded Files' },
                 ),
                 new SettingsItem(
-                    '(Project) Excluded Folders',
+                    'Excluded Folders',
                     excludedPatternsLabel(settings.getWorkspaceExcludedFolders()),
                     'Click to edit folder exclusion patterns for this project',
                     new vscode.ThemeIcon('folder'),
                     { command: 'watchtower.editWorkspaceExcludedFolders', title: 'Edit Excluded Folders' },
                 ),
-                new RulesGroupItem(),
-                new ProjectRulesGroupItem(),
+                new SettingsItem(
+                    'Real-Time Detection',
+                    enabledLabel(workspaceRealTime),
+                    'Click to toggle',
+                    enabledIcon('broadcast', workspaceRealTime),
+                    { command: 'watchtower.toggleWorkspaceRealTime', title: 'Toggle Real-Time Detection' },
+                ),
+                new SettingsItem(
+                    'Run on Startup',
+                    enabledLabel(workspaceStartup),
+                    'Click to toggle',
+                    enabledIcon('play-circle', workspaceStartup),
+                    { command: 'watchtower.toggleWorkspaceStartupScan', title: 'Toggle Startup Scan' },
+                ),
+                this.projectRulesGroup,
             ]
         }
 
-        if (element instanceof RulesGroupItem) {
-            const disabledRules = Settings.getInstance().getDisabledRules()
+        if (element === this.globalRulesGroup) {
+            const disabledRules = settings.getDisabledRules()
             return RuleRegistry.getAllRules().map(rule => {
                 const enabled = !disabledRules.includes(rule.id)
                 return new SettingsItem(
@@ -120,8 +195,8 @@ export class SettingsTreeProvider implements vscode.TreeDataProvider<vscode.Tree
             })
         }
 
-        if (element instanceof ProjectRulesGroupItem) {
-            const disabledRules = Settings.getInstance().getWorkspaceDisabledRules()
+        if (element === this.projectRulesGroup) {
+            const disabledRules = settings.getWorkspaceDisabledRules()
             return RuleRegistry.getAllRules().map(rule => {
                 const enabled = !disabledRules.includes(rule.id)
                 return new SettingsItem(

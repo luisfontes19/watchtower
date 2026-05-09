@@ -160,13 +160,8 @@
           "initialSize": 1
         },
         {
-          "id": "watchtower.actions",
-          "name": "Actions",
-          "initialSize": 1
-        },
-        {
           "id": "watchtower.settings",
-          "name": "Settings",
+          "name": "Control Panel",
           "initialSize": 1
         }
       ]
@@ -222,6 +217,10 @@
       {
         "command": "watchtower.editWorkspaceExcludedFolders",
         "title": "Watchtower: Edit Project Excluded Folders"
+      },
+      {
+        "command": "watchtower.toggleAutoUninstallMalicious",
+        "title": "Watchtower: Toggle Auto Uninstall Malicious"
       }
     ],
     "menus": {
@@ -256,6 +255,10 @@
         },
         {
           "command": "watchtower.editWorkspaceExcludedFolders",
+          "when": "false"
+        },
+        {
+          "command": "watchtower.toggleAutoUninstallMalicious",
           "when": "false"
         }
       ],
