@@ -77,6 +77,11 @@ Watchtower was built in response to documented, active attack campaigns targetin
 
 Found a threat pattern Watchtower should detect? Open an issue or PR on [GitHub](https://github.com/luisfontes19/watchtower/issues).
 
+To get started with the codebase:
+
+- **[Architecture overview](docs/architecture.md)** — how the extension is organized and where to look
+- **[Creating detections](docs/detections.md)** — how to add new analyzers and rules
+
 ## 📝 License
 
 MIT — see [LICENSE.md](LICENSE.md)
