@@ -1,5 +1,12 @@
 # Watchtower Changelog
 
+## [0.4.1]
+
+### Bug Fixes
+
+* Fixed the findings counter badge on the sidebar icon not updating after running a new scan. Previously, the badge would show a stale count from the previous scan even after findings were resolved.
+* Fixed file exclusion patterns (e.g. `**/*`) not matching files inside dotfolders like `.vscode/` or `.github/`. Excluded files in these directories will now be correctly ignored during scans.
+
 ## [0.4.0]
 
 ### Git Hook Detection
