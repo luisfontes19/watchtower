@@ -1,5 +1,6 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
+import { rule } from '../rules'
 import { Configuration, Finding, FindingType } from '../types'
 import { rangeFromJsonNode } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
@@ -26,14 +27,14 @@ export class LaunchAnalyzer extends StaticAnalyzer {
 
         const configs = jsonContent.configurations as Configuration[] || []
         for (let i = 0; i < configs.length; i++) {
-            const finding = this.analyzeConfiguration(configs[i], uri, textContent, i)
-            if (finding) findings.push(finding)
+            findings.push(...this.analyzeConfiguration(configs[i], uri, textContent, i))
         }
 
         return findings
     }
 
-    private analyzeConfiguration(config: Configuration, uri: vscode.Uri, text: string, index: number): Finding | undefined {
+    @rule('suspicious-launch-config', 'Detects suspicious launch configurations with custom programs or hidden configs')
+    analyzeConfiguration(config: Configuration, uri: vscode.Uri, text: string, index: number): Finding[] {
         const configName = config.name ?? config.type ?? 'unknown'
 
         let data: any = { program: undefined, hiddenPresentation: false, score: 0 }
@@ -45,7 +46,7 @@ export class LaunchAnalyzer extends StaticAnalyzer {
             data = { ...data, hiddenPresentation: true, score: data.score + 1 }
 
         if (!data.program && !data.hiddenPresentation)
-            return undefined
+            return []
 
         const issues: string[] = []
         if (data.program)
@@ -59,13 +60,13 @@ export class LaunchAnalyzer extends StaticAnalyzer {
         if (data.program) tags.push('custom program')
         if (data.hiddenPresentation) tags.push('hidden from UI')
 
-        return {
+        return [{
             type: FindingType.Configuration,
             name: `Config '${configName}' — ${tags.join(', ')}`,
             detail: issues.join('\n'),
             priority,
             file: vscode.workspace.asRelativePath(uri),
             range: rangeFromJsonNode(text, ['configurations', index, "program"])
-        }
+        }]
     }
 }

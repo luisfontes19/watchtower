@@ -2,6 +2,7 @@
 
 
 import * as vscode from 'vscode'
+import { rule } from '../rules'
 import { Finding, FindingType } from '../types'
 import { StaticAnalyzer } from './staticAnalyzer'
 
@@ -33,6 +34,7 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
         return [...invisible, ...trojan]
     }
 
+    @rule('trojan-source', 'Detects Trojan Source Unicode characters that manipulate code display')
     public findTrojanSource(text: string, uri: vscode.Uri): Finding[] {
         const relativePath = vscode.workspace.asRelativePath(uri)
         const file = vscode.workspace.asRelativePath(uri, false)
@@ -52,6 +54,7 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
     }
 
 
+    @rule('invisible-code', 'Detects invisible Unicode characters hidden in source code')
     public findInvisibleCode(text: string, uri: vscode.Uri): Finding[] {
         const relativePath = vscode.workspace.asRelativePath(uri)
         const file = vscode.workspace.asRelativePath(uri, false)

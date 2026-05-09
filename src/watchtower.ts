@@ -315,6 +315,11 @@ export class Watchtower {
         this.settingsTree.refresh()
     }
 
+    public async commandToggleRule(ruleId: string): Promise<void> {
+        await this.settings.toggleRule(ruleId)
+        this.settingsTree.refresh()
+    }
+
     public async runInitialScan(): Promise<void> {
         if (!this.settings.shouldRunStartupScanForWorkspace()) {
             console.log('[Watchtower] Startup scan disabled for this workspace, skipping')

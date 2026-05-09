@@ -2,6 +2,7 @@ import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 
 import { isDangerousCommand } from '../dangerousCommands'
+import { rule } from '../rules'
 import { Finding, FindingType, Task } from '../types'
 import { rangeFromJsonNode } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
@@ -28,14 +29,14 @@ export class TaskAnalyzer extends StaticAnalyzer {
 
         const findings: Finding[] = []
         for (let i = 0; i < tasks.length; i++) {
-            const finding = this.analyzeTask(tasks[i], uri, textContent, i)
-            if (finding) findings.push(finding)
+            findings.push(...this.analyzeTask(tasks[i], uri, textContent, i))
         }
 
         return findings
     }
 
-    private analyzeTask(task: Task, uri: vscode.Uri, text: string, index: number): Finding | undefined {
+    @rule('suspicious-task', 'Detects suspicious task configurations with dangerous commands or hidden output')
+    analyzeTask(task: Task, uri: vscode.Uri, text: string, index: number): Finding[] {
         const taskName = task.label ?? task.command ?? 'unknown'
 
         let data: any = { command: undefined, presentation: undefined, runOnFolderOpen: false, score: 0 }
@@ -51,7 +52,7 @@ export class TaskAnalyzer extends StaticAnalyzer {
             data = { ...data, runOnFolderOpen: true, score: data.score + 1 }
 
         if (!data.command && !data.presentation && !data.runOnFolderOpen)
-            return undefined
+            return []
 
         const issues: string[] = []
         if (data.command)
@@ -68,14 +69,14 @@ export class TaskAnalyzer extends StaticAnalyzer {
         if (data.presentation) tags.push('hidden output')
         if (data.runOnFolderOpen) tags.push('auto-runs on open')
 
-        return {
+        return [{
             type: FindingType.Task,
             name: `Task '${taskName}' — ${tags.join(', ')}`,
             detail: issues.join('\n'),
             priority,
             file: vscode.workspace.asRelativePath(uri),
             range: rangeFromJsonNode(text, ['tasks', index])
-        }
+        }]
     }
 
     private runsOnFolderOpen(task: Task): boolean {

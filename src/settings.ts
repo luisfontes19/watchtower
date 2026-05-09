@@ -60,17 +60,23 @@ export class Settings {
             .get<string[]>('excludedFolders', [])
     }
 
+    public getDisabledRules(): string[] {
+        return vscode.workspace.getConfiguration('watchtower').get<string[]>('disabledRules', [])
+    }
+
+    public async toggleRule(ruleId: string): Promise<void> {
+        const disabled = this.getDisabledRules()
+        const updated = disabled.includes(ruleId) ? disabled.filter(id => id !== ruleId) : [...disabled, ruleId]
+        await vscode.workspace.getConfiguration('watchtower').update('disabledRules', updated, vscode.ConfigurationTarget.Global)
+    }
+
 
     public async setGlobalStartupScans(mode: StartupScansMode): Promise<void> {
-        await vscode.workspace
-            .getConfiguration('watchtower')
-            .update('startupScans', mode, vscode.ConfigurationTarget.Global)
+        await vscode.workspace.getConfiguration('watchtower').update('startupScans', mode, vscode.ConfigurationTarget.Global)
     }
 
     public async setGlobalInlineFindings(type: InlineFindingType): Promise<void> {
-        await vscode.workspace
-            .getConfiguration('watchtower')
-            .update('inlineFindings', type, vscode.ConfigurationTarget.Global)
+        await vscode.workspace.getConfiguration('watchtower').update('inlineFindings', type, vscode.ConfigurationTarget.Global)
     }
 
 

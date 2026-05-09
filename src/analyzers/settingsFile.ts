@@ -1,6 +1,7 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
 import { SUSPICIOUS_COMMANDS } from '../dangerousCommands'
+import { rule } from '../rules'
 import { Finding, FindingType } from '../types'
 import { rangeFromJsonNode, rangeOfKeyInText } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
@@ -51,6 +52,17 @@ export class SettingsAnalyzer extends StaticAnalyzer {
         const textContent = new TextDecoder().decode(data)
         const json = jsonc.parse(textContent) as Record<string, any>
 
+        findings.push(...this.checkBinaryPaths(json, uri, textContent))
+        findings.push(...this.checkAiAgentConfiguration(json, uri, textContent))
+        findings.push(...this.checkTerminalEnvOverrides(json, uri, textContent))
+
+        return findings
+    }
+
+    @rule('custom-binary-path', 'Detects custom interpreter/binary paths in VS Code settings')
+    checkBinaryPaths(json: Record<string, any>, uri: vscode.Uri, textContent: string): Finding[] {
+        const findings: Finding[] = []
+
         const findInterpreterPaths = (obj: unknown, path: string = ''): void => {
             if (obj === null || obj === undefined || typeof obj !== 'object')
                 return
@@ -74,19 +86,11 @@ export class SettingsAnalyzer extends StaticAnalyzer {
         }
 
         findInterpreterPaths(json)
-
-        // Check for AI agent security issues
-        const aiConfigIssue = this.checkAiAgentConfiguration(json, uri, textContent)
-        if (aiConfigIssue) {
-            findings.push(aiConfigIssue)
-        }
-
-        findings.push(...this.checkTerminalEnvOverrides(json, uri, textContent))
-
         return findings
     }
 
-    private checkAiAgentConfiguration(json: Record<string, any>, uri: vscode.Uri, text: string): Finding | undefined {
+    @rule('ai-auto-approve', 'Detects insecure AI agent auto-approve configurations')
+    checkAiAgentConfiguration(json: Record<string, any>, uri: vscode.Uri, text: string): Finding[] {
         const issues: string[] = []
         let score = 0
 
@@ -143,7 +147,7 @@ export class SettingsAnalyzer extends StaticAnalyzer {
         }
 
         if (issues.length === 0)
-            return undefined
+            return []
 
 
         const priority: Finding['priority'] = score >= 3 ? 'high' : score === 2 ? 'medium' : 'low'
@@ -156,17 +160,18 @@ export class SettingsAnalyzer extends StaticAnalyzer {
             if (range) break
         }
 
-        return {
+        return [{
             type: FindingType.AutoApprove,
             name: "Insecure AI agent configurations can lead to compromises",
             detail: issues.join('\n'),
             priority,
             file: vscode.workspace.asRelativePath(uri, false),
             range
-        }
+        }]
     }
 
-    private checkTerminalEnvOverrides(json: Record<string, any>, uri: vscode.Uri, text: string): Finding[] {
+    @rule('terminal-env-override', 'Detects terminal environment variable overrides that could hijack binaries')
+    checkTerminalEnvOverrides(json: Record<string, any>, uri: vscode.Uri, text: string): Finding[] {
         const findings: Finding[] = []
         const file = vscode.workspace.asRelativePath(uri, false)
 

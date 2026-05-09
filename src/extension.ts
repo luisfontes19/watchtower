@@ -51,6 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('watchtower.showReport', () => showHTMLReport(watchtower.findings, context.extensionUri)),
 		vscode.commands.registerCommand('watchtower.revealFinding', (finding) => findingsTree.revealFinding(finding)),
 		vscode.commands.registerCommand('watchtower.scanExtension', watchtower.commandScanExtension.bind(watchtower)),
+		vscode.commands.registerCommand('watchtower.toggleRule', (ruleId: string) => watchtower.commandToggleRule(ruleId)),
 	]
 
 	commands.forEach(command => context.subscriptions.push(command))

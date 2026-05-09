@@ -1,5 +1,6 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
+import { rule } from '../rules'
 import { Finding, FindingType } from '../types'
 import { rangeFromJsonNode } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
@@ -32,6 +33,7 @@ export class JsonFile extends StaticAnalyzer {
         return findings
     }
 
+    @rule('json-schema-exfiltration', 'Detects potential data exfiltration via JSON $schema URLs')
     checkSchemaUrl(url: string, fileUri: vscode.Uri, text: string): Finding[] {
         const findings: Finding[] = []
         const uri = vscode.Uri.parse(url)

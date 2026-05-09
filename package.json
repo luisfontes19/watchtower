@@ -117,6 +117,15 @@
             "**/.tox/**"
           ],
           "description": "Folders to exclude from Watchtower scans"
+        },
+        "watchtower.disabledRules": {
+          "type": "array",
+          "scope": "application",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "List of rule IDs to disable. All rules are enabled by default. View available rules in the Watchtower settings panel."
         }
       }
     },
@@ -190,6 +199,10 @@
       {
         "command": "watchtower.toggleWorkspaceRealTime",
         "title": "Watchtower: Toggle Workspace Real-Time Detection"
+      },
+      {
+        "command": "watchtower.toggleRule",
+        "title": "Watchtower: Toggle Rule"
       }
     ],
     "menus": {
@@ -208,6 +221,10 @@
         },
         {
           "command": "watchtower.toggleWorkspaceRealTime",
+          "when": "false"
+        },
+        {
+          "command": "watchtower.toggleRule",
           "when": "false"
         }
       ],

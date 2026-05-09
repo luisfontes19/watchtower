@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { rule } from '../rules'
 import { Finding, FindingType } from '../types'
 import { StaticAnalyzer } from './staticAnalyzer'
 
@@ -13,6 +14,11 @@ export class GitHooksAnalyzer extends StaticAnalyzer {
     }
 
     async checkFile(uri: vscode.Uri, _content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
+        return this.detectGitHooks(uri)
+    }
+
+    @rule('git-hooks', 'Detects git hooks folders that execute commands on git events')
+    detectGitHooks(uri: vscode.Uri): Finding[] {
         const folder = this.parentFolderRelativePath(uri) + '/'
 
         if (GitHooksAnalyzer.isHuskyHook(uri)) {

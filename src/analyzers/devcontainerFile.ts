@@ -1,5 +1,6 @@
 import * as jsonc from 'jsonc-parser'
 import * as vscode from 'vscode'
+import { rule } from '../rules'
 import { ThreatIntel } from '../threatIntel/threatIntel'
 import { Finding, FindingType } from '../types'
 import { rangeFromJsonNode } from '../utils'
@@ -36,6 +37,7 @@ export class DevContainerAnalyzer extends StaticAnalyzer {
         return uri.fsPath.endsWith('.devcontainer/devcontainer.json')
     }
 
+    @rule('devcontainer-extensions', 'Detects malicious extensions defined in devcontainer.json')
     checkExtensions(json: Record<string, unknown>, uri: vscode.Uri, text: string): Finding[] {
         const findings: Finding[] = []
 
@@ -59,6 +61,7 @@ export class DevContainerAnalyzer extends StaticAnalyzer {
     }
 
 
+    @rule('devcontainer-mcp-servers', 'Detects MCP servers defined in devcontainer.json')
     checkMcpServers(json: Record<string, unknown>, uri: vscode.Uri, text: string): Finding[] {
         const findings: Finding[] = []
         const servers = (((json?.customizations as Record<string, unknown>)?.vscode as Record<string, unknown>)?.mcp as Record<string, unknown>)?.servers as Record<string, unknown> | undefined

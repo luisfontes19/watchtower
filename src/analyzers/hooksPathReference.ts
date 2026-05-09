@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { rule } from '../rules'
 import { Finding, FindingType } from '../types'
 import { rangeFromOffset } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
@@ -18,6 +19,11 @@ export class HooksPathReferenceAnalyzer extends StaticAnalyzer {
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         const data = content ?? await vscode.workspace.fs.readFile(uri)
         const text = new TextDecoder().decode(data)
+        return this.detectHooksPathReferences(text, uri)
+    }
+
+    @rule('hooks-path-reference', 'Detects references to custom git hooks paths in markdown files')
+    detectHooksPathReferences(text: string, uri: vscode.Uri): Finding[] {
         const file = vscode.workspace.asRelativePath(uri, false)
 
         return [...text.matchAll(HooksPathReferenceAnalyzer.HOOKS_PATH_PATTERN)].map(match => ({
