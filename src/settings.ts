@@ -96,6 +96,40 @@ export class Settings {
         await this.workspaceStorage.update(this.workspaceKey('runRealTimeDetection'), enabled)
     }
 
+    public getWorkspaceDisabledRules(): string[] {
+        return this.workspaceStorage.get<string[]>(this.workspaceKey('disabledRules'), [])
+    }
+
+    public async toggleWorkspaceRule(ruleId: string): Promise<void> {
+        const disabled = this.getWorkspaceDisabledRules()
+        const updated = disabled.includes(ruleId) ? disabled.filter(id => id !== ruleId) : [...disabled, ruleId]
+        await this.workspaceStorage.update(this.workspaceKey('disabledRules'), updated)
+    }
+
+    public getWorkspaceExcludedFiles(): string[] {
+        return this.workspaceStorage.get<string[]>(this.workspaceKey('excludedFiles'), [])
+    }
+
+    public async setWorkspaceExcludedFiles(patterns: string[]): Promise<void> {
+        await this.workspaceStorage.update(this.workspaceKey('excludedFiles'), patterns)
+    }
+
+    public getWorkspaceExcludedFolders(): string[] {
+        return this.workspaceStorage.get<string[]>(this.workspaceKey('excludedFolders'), [])
+    }
+
+    public async setWorkspaceExcludedFolders(patterns: string[]): Promise<void> {
+        await this.workspaceStorage.update(this.workspaceKey('excludedFolders'), patterns)
+    }
+
+    public getAllExcludedFolders(): string[] {
+        return [...this.getExcludedFolders(), ...this.getWorkspaceExcludedFolders()]
+    }
+
+    public getAllDisabledRules(): string[] {
+        return [...new Set([...this.getDisabledRules(), ...this.getWorkspaceDisabledRules()])]
+    }
+
 
     public hasExplicitProjectSetting(setting: string): boolean {
         return this.workspaceStorage.get(this.workspaceKey(setting)) !== undefined

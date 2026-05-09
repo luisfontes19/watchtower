@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { Settings } from './settings'
 
 export interface RuleDefinition {
     id: string
@@ -13,10 +14,8 @@ export class RuleRegistry {
     }
 
     static isEnabled(ruleId: string): boolean {
-        const disabledRules = vscode.workspace
-            .getConfiguration('watchtower')
-            .get<string[]>('disabledRules', [])
-        return !disabledRules.includes(ruleId)
+        const disabled = Settings.getInstance().getAllDisabledRules()
+        return !disabled.includes(ruleId)
     }
 
     static getAllRules(): RuleDefinition[] {

@@ -15,6 +15,7 @@ import { SettingsTreeProvider } from './providers/settingsTreeProvider'
 import { Settings } from './settings'
 import { ThreatIntel } from './threatIntel/threatIntel'
 import { Finding, FindingType, InlineFindingType, StartupScansMode } from './types'
+import { fileMatchesPatterns } from './utils'
 
 
 export class Watchtower {
@@ -219,7 +220,7 @@ export class Watchtower {
             const findings: Finding[] = []
 
             progress.report({ increment: 0, message: 'Listing project files...' })
-            const excludePattern = `{${this.settings.getExcludedFolders().join(',')}}`
+            const excludePattern = `{${this.settings.getAllExcludedFolders().join(',')}}`
             const files = await vscode.workspace.findFiles('**/*', excludePattern)
             console.log(`[Watchtower] Found ${files.length} files to scan`)
 
@@ -320,6 +321,37 @@ export class Watchtower {
         this.settingsTree.refresh()
     }
 
+    public async commandToggleWorkspaceRule(ruleId: string): Promise<void> {
+        await this.settings.toggleWorkspaceRule(ruleId)
+        this.settingsTree.refresh()
+    }
+
+    public async commandEditWorkspaceExcludedFiles(): Promise<void> {
+        const current = this.settings.getWorkspaceExcludedFiles()
+        const input = await vscode.window.showInputBox({
+            prompt: 'Enter glob patterns for files to exclude from scans (comma-separated)',
+            value: current.join(', '),
+            placeHolder: 'e.g. **/generated/*, src/vendor/**'
+        })
+        if (input === undefined) return
+        const patterns = input.split(',').map(p => p.trim()).filter(Boolean)
+        await this.settings.setWorkspaceExcludedFiles(patterns)
+        this.settingsTree.refresh()
+    }
+
+    public async commandEditWorkspaceExcludedFolders(): Promise<void> {
+        const current = this.settings.getWorkspaceExcludedFolders()
+        const input = await vscode.window.showInputBox({
+            prompt: 'Enter glob patterns for folders to exclude from scans (comma-separated)',
+            value: current.join(', '),
+            placeHolder: 'e.g. **/build/**, **/vendor/**'
+        })
+        if (input === undefined) return
+        const patterns = input.split(',').map(p => p.trim()).filter(Boolean)
+        await this.settings.setWorkspaceExcludedFolders(patterns)
+        this.settingsTree.refresh()
+    }
+
     public async runInitialScan(): Promise<void> {
         if (!this.settings.shouldRunStartupScanForWorkspace()) {
             console.log('[Watchtower] Startup scan disabled for this workspace, skipping')
@@ -383,6 +415,11 @@ export class Watchtower {
 
         console.log(`Scanning file: ${uri.fsPath}`)
 
+        if (this.isFileExcluded(uri)) {
+            console.log(`[Watchtower] File excluded: ${vscode.workspace.asRelativePath(uri)}`)
+            return []
+        }
+
         // Ensure we only read file once, when running on multiple analyzers, as vscode.workspace.fs.readFile can be expensive on large files or remote workspaces
         const ensureFileContent = async (): Promise<Uint8Array> => {
             if (content) return content
@@ -414,6 +451,12 @@ export class Watchtower {
     private isDuplicateFolderFinding(finding: Finding, existing: Finding[]): boolean {
         if (!finding.file.endsWith('/')) return false
         return existing.some(e => e.file === finding.file && e.type === finding.type)
+    }
+
+    private isFileExcluded(uri: vscode.Uri): boolean {
+        const excludedFiles = this.settings.getWorkspaceExcludedFiles()
+        if (excludedFiles.length === 0) return false
+        return fileMatchesPatterns(uri, excludedFiles)
     }
 
 

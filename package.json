@@ -210,6 +210,18 @@
       {
         "command": "watchtower.toggleRule",
         "title": "Watchtower: Toggle Rule"
+      },
+      {
+        "command": "watchtower.toggleWorkspaceRule",
+        "title": "Watchtower: Toggle Project Rule"
+      },
+      {
+        "command": "watchtower.editWorkspaceExcludedFiles",
+        "title": "Watchtower: Edit Project Excluded Files"
+      },
+      {
+        "command": "watchtower.editWorkspaceExcludedFolders",
+        "title": "Watchtower: Edit Project Excluded Folders"
       }
     ],
     "menus": {
@@ -232,6 +244,18 @@
         },
         {
           "command": "watchtower.toggleRule",
+          "when": "false"
+        },
+        {
+          "command": "watchtower.toggleWorkspaceRule",
+          "when": "false"
+        },
+        {
+          "command": "watchtower.editWorkspaceExcludedFiles",
+          "when": "false"
+        },
+        {
+          "command": "watchtower.editWorkspaceExcludedFolders",
           "when": "false"
         }
       ],

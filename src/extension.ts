@@ -52,6 +52,9 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('watchtower.revealFinding', (finding) => findingsTree.revealFinding(finding)),
 		vscode.commands.registerCommand('watchtower.scanExtension', watchtower.commandScanExtension.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.toggleRule', (ruleId: string) => watchtower.commandToggleRule(ruleId)),
+		vscode.commands.registerCommand('watchtower.toggleWorkspaceRule', (ruleId: string) => watchtower.commandToggleWorkspaceRule(ruleId)),
+		vscode.commands.registerCommand('watchtower.editWorkspaceExcludedFiles', watchtower.commandEditWorkspaceExcludedFiles.bind(watchtower)),
+		vscode.commands.registerCommand('watchtower.editWorkspaceExcludedFolders', watchtower.commandEditWorkspaceExcludedFolders.bind(watchtower)),
 	]
 
 	commands.forEach(command => context.subscriptions.push(command))

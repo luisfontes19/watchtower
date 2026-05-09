@@ -28,6 +28,14 @@ class RulesGroupItem extends vscode.TreeItem {
     }
 }
 
+class ProjectRulesGroupItem extends vscode.TreeItem {
+    constructor() {
+        super('(Project) Rules', vscode.TreeItemCollapsibleState.Collapsed)
+        this.tooltip = 'Toggle individual security rules on or off for this project'
+        this.iconPath = new vscode.ThemeIcon('checklist')
+    }
+}
+
 export class SettingsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     public static readonly viewType = 'watchtower.settings'
 
@@ -79,7 +87,22 @@ export class SettingsTreeProvider implements vscode.TreeDataProvider<vscode.Tree
                     enabledIcon('broadcast', workspaceRealTime),
                     { command: 'watchtower.toggleWorkspaceRealTime', title: 'Toggle Real-Time Detection' },
                 ),
+                new SettingsItem(
+                    '(Project) Excluded Files',
+                    excludedPatternsLabel(settings.getWorkspaceExcludedFiles()),
+                    'Click to edit file exclusion patterns for this project',
+                    new vscode.ThemeIcon('exclude'),
+                    { command: 'watchtower.editWorkspaceExcludedFiles', title: 'Edit Excluded Files' },
+                ),
+                new SettingsItem(
+                    '(Project) Excluded Folders',
+                    excludedPatternsLabel(settings.getWorkspaceExcludedFolders()),
+                    'Click to edit folder exclusion patterns for this project',
+                    new vscode.ThemeIcon('folder'),
+                    { command: 'watchtower.editWorkspaceExcludedFolders', title: 'Edit Excluded Folders' },
+                ),
                 new RulesGroupItem(),
+                new ProjectRulesGroupItem(),
             ]
         }
 
@@ -93,6 +116,20 @@ export class SettingsTreeProvider implements vscode.TreeDataProvider<vscode.Tree
                     `${rule.description}\nClick to ${enabled ? 'disable' : 'enable'}`,
                     enabledIcon('shield', enabled),
                     { command: 'watchtower.toggleRule', title: 'Toggle Rule', arguments: [rule.id] },
+                )
+            })
+        }
+
+        if (element instanceof ProjectRulesGroupItem) {
+            const disabledRules = Settings.getInstance().getWorkspaceDisabledRules()
+            return RuleRegistry.getAllRules().map(rule => {
+                const enabled = !disabledRules.includes(rule.id)
+                return new SettingsItem(
+                    rule.id,
+                    enabledLabel(enabled),
+                    `${rule.description}\nClick to ${enabled ? 'disable' : 'enable'} for this project`,
+                    enabledIcon('shield', enabled),
+                    { command: 'watchtower.toggleWorkspaceRule', title: 'Toggle Project Rule', arguments: [rule.id] },
                 )
             })
         }
@@ -119,6 +156,11 @@ function inlineFindingsLabel(type: InlineFindingType): string {
 
 function enabledLabel(enabled: boolean): string {
     return enabled ? 'Enabled' : 'Disabled'
+}
+
+function excludedPatternsLabel(patterns: string[]): string {
+    if (patterns.length === 0) return 'None'
+    return patterns.join(', ')
 }
 
 function enabledIcon(iconId: string, enabled: boolean): vscode.ThemeIcon {
