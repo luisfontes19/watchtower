@@ -20,7 +20,7 @@ export const fileMatchesPatterns = (uri: vscode.Uri, patterns: string[]): boolea
     if (process.env.NODE_ENV === 'test')
         normalized = normalized.startsWith('/') ? normalized.substring(1) : normalized // since we dont have a workspace, relative file paths will be set in the root
 
-    return patterns.some(pattern => minimatch(normalized, pattern))
+    return patterns.some(pattern => minimatch(normalized, pattern, { dot: true }))
 }
 
 export const rangeFromJsonNode = (text: string, path: jsonc.JSONPath): vscode.Range | undefined => {
