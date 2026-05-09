@@ -1,5 +1,30 @@
 # Whats New
 
+## [0.4.0]
+
+### Git Hook Detection
+
+Watchtower now scans for git hooks in `.husky/` and `.githooks/` directories, as well as references to `core.hooksPath` in markdown files. Git hooks run automatically on git operations and are a common vector for hidden malware in cloned repositories.
+
+### Toggleable Detection Rules
+
+You can now enable or disable individual detection rules — both globally and per workspace. Each detection (e.g., `trojan-source`, `suspicious-task`, `json-schema-exfiltration`) can be toggled independently from the new Control Panel, giving you fine-grained control over what Watchtower flags.
+
+### New Control Panel
+
+The previous "Settings" and "Actions" panels have been merged into a single **Control Panel** with collapsible sections for global settings, per-project settings, rules management, and actions — all in one place.
+
+![New Control Panel](data/images/new-control-panel.jpg)
+
+### Per-Project Settings
+
+You can now configure excluded files, excluded folders, and disabled rules on a per-workspace basis. This lets you suppress known false positives in specific projects without affecting your global configuration.
+
+### Improvements
+
+* The Findings Overview panel is now hidden by default to reduce sidebar clutter. It can be re-enabled from the sidebar context menu.
+* Added [architecture](docs/architecture.md) and [detection authoring](docs/detections.md) docs to help contributors get started.
+
 ## [0.3.3]
 
 ### Malicious Extension Detection in Workspace Config Files
