@@ -28,12 +28,13 @@ export class Watchtower {
     private findingsTree: FindingsTreeProvider
     private findingsOverview: FindingsOverviewProvider
     private settingsTree: SettingsTreeProvider
+    private settingsTreeView: vscode.TreeView<vscode.TreeItem>
     private threatIntel: ThreatIntel
 
 
     private allAnalyzers: StaticAnalyzer[]
 
-    private constructor(findingsTree: FindingsTreeProvider, findingsOverview: FindingsOverviewProvider, settingsTree: SettingsTreeProvider) {
+    private constructor(findingsTree: FindingsTreeProvider, findingsOverview: FindingsOverviewProvider, settingsTree: SettingsTreeProvider, settingsTreeView: vscode.TreeView<vscode.TreeItem>) {
 
         this.allAnalyzers = [
             new AgentsAnalyzer(),
@@ -51,6 +52,7 @@ export class Watchtower {
         this.findingsTree = findingsTree
         this.findingsOverview = findingsOverview
         this.settingsTree = settingsTree
+        this.settingsTreeView = settingsTreeView
         this.threatIntel = new ThreatIntel()
 
         const warningEmoji = '❗️'
@@ -74,10 +76,11 @@ export class Watchtower {
     public static getInstance(
         findingsTree: FindingsTreeProvider,
         findingsOverview: FindingsOverviewProvider,
-        settingsTree: SettingsTreeProvider): Watchtower {
+        settingsTree: SettingsTreeProvider,
+        settingsTreeView: vscode.TreeView<vscode.TreeItem>): Watchtower {
 
         if (!Watchtower.instance)
-            Watchtower.instance = new Watchtower(findingsTree, findingsOverview, settingsTree)
+            Watchtower.instance = new Watchtower(findingsTree, findingsOverview, settingsTree, settingsTreeView)
 
 
         return Watchtower.instance
@@ -88,6 +91,19 @@ export class Watchtower {
     private updateViews() {
         this.findingsTree.setFindings(this.findings)
         this.findingsOverview?.setFindings(this.findings)
+        this.updateBadge()
+    }
+
+    private updateBadge() {
+        if (this.findings.length === 0) {
+            this.settingsTreeView.badge = undefined
+            return
+        }
+
+        this.settingsTreeView.badge = {
+            value: this.findings.length,
+            tooltip: `${this.findings.length} finding${this.findings.length !== 1 ? 's' : ''}`
+        }
     }
 
     public async onFileCreated(uri: vscode.Uri) {

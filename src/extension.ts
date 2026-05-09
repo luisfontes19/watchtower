@@ -16,8 +16,9 @@ export function activate(context: vscode.ExtensionContext) {
 	const findingsTree = new FindingsTreeProvider()
 	const findingsOverview = new FindingsOverviewProvider()
 	const settingsTree = new SettingsTreeProvider()
+	const settingsTreeView = vscode.window.createTreeView(SettingsTreeProvider.viewType, { treeDataProvider: settingsTree })
 
-	const watchtower = Watchtower.getInstance(findingsTree, findingsOverview, settingsTree)
+	const watchtower = Watchtower.getInstance(findingsTree, findingsOverview, settingsTree, settingsTreeView)
 
 
 	/////////////////////////////
@@ -30,9 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(FindingsOverviewProvider.viewType, findingsOverview)
 	)
-	context.subscriptions.push(
-		vscode.window.registerTreeDataProvider(SettingsTreeProvider.viewType, settingsTree)
-	)
+	context.subscriptions.push(settingsTreeView)
 	/////////////////////////////
 	// Commands
 	/////////////////////////////

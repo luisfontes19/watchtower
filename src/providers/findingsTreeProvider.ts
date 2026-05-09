@@ -26,7 +26,6 @@ export class FindingsTreeProvider implements vscode.WebviewViewProvider {
                 if (finding) this.revealFinding(finding)
             }
         })
-        this.updateBadge()
         this.render()
     }
 
@@ -67,25 +66,7 @@ export class FindingsTreeProvider implements vscode.WebviewViewProvider {
     setFindings(findings: Finding[]) {
         this.findings = findings
         vscode.commands.executeCommand('setContext', 'watchtower.hasFindings', findings.length > 0)
-        this.updateBadge()
         this.render()
-    }
-
-    private updateBadge() {
-        if (!this._view) return
-        if (this.findings.length === 0) {
-            this._view.badge = undefined
-            return
-        }
-        const highest = this.findings.some(f => f.priority === 'high')
-            ? 'high'
-            : this.findings.some(f => f.priority === 'medium')
-                ? 'medium'
-                : 'low'
-        this._view.badge = {
-            value: this.findings.length,
-            tooltip: `${this.findings.length} finding${this.findings.length !== 1 ? 's' : ''} (highest: ${highest})`
-        }
     }
 
     private getFilteredFindings(): Finding[] {
