@@ -35,24 +35,6 @@ And more...
 
 **Manual scan:** `Ctrl+Shift+P` → `Watchtower: Scan Workspace`
 
-## ⚙️ Configuration
-
-Access settings via **Settings → Extensions → Watchtower** for global settings or the sidebar settings panel for Workspace specific settings.
-
-### Global Settings
-
-| Setting | Default | Description |
-|---|---|---|
-| `watchtower.startupScans` | `OnEveryProject` | `OnEveryProject` · `OnUntrusted` · `Off` |
-| `watchtower.inlineFindings` | `invisible` | Inline highlights: `all` · `invisible` · `none` |
-| `watchtower.autoUninstallMalicious` | `true` | Auto-remove extensions flagged by threat intel |
-| `watchtower.excludedFolders` | `node_modules`, `.git`, `.venv`… | Glob patterns to skip during scanning |
-
-### Workspace Settings
-
-![Workspace settings panel](data/images/redesigned-settings-panel.jpg)
-
-
 ## 🎯 Real-World Attack Context
 
 Watchtower was built in response to documented, active attack campaigns targeting developers:
