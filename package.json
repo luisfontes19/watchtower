@@ -118,6 +118,12 @@
           ],
           "description": "Folders to exclude from Watchtower scans"
         },
+        "watchtower.checkWorkspaceTrust": {
+          "type": "boolean",
+          "scope": "application",
+          "default": true,
+          "description": "Show a warning on startup if Workspace Trust settings are insecure"
+        },
         "watchtower.showOverview": {
           "type": "boolean",
           "scope": "application",

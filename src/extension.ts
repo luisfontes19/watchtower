@@ -95,7 +95,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}))
 
 
-
+	watchtower.checkWorkspaceTrustSettings()
 	watchtower.showWhatsNewIfUpdated(context)
 	watchtower.runInitialScan()
 

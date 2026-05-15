@@ -19,6 +19,8 @@ export const SUSPICIOUS_COMMANDS = [
     /\bnode\b/i,
     /\bnpm\b/i,
     /\bpwsh\b/i,
+    /\bbun\b/i,
+    /\bdeno\b/i,
 ]
 
 export const isDangerousCommand = (command: string): boolean => {

@@ -54,6 +54,12 @@ export class Settings {
             .get<boolean>('autoUninstallMalicious', true)
     }
 
+    public getCheckWorkspaceTrust(): boolean {
+        return vscode.workspace
+            .getConfiguration('watchtower')
+            .get<boolean>('checkWorkspaceTrust', true)
+    }
+
     public getExcludedFolders(): string[] {
         return vscode.workspace
             .getConfiguration('watchtower')

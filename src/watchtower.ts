@@ -106,6 +106,26 @@ export class Watchtower {
         }
     }
 
+    public async checkWorkspaceTrustSettings() {
+        if (!this.settings.getCheckWorkspaceTrust()) return
+
+        const trustConfig = vscode.workspace.getConfiguration('security.workspace.trust')
+        const enabled = trustConfig.get('enabled') === true
+        const startupPrompt = trustConfig.get('startupPrompt')
+
+        if (!enabled || startupPrompt === 'never') {
+            vscode.window.showWarningMessage(
+                'Watchtower: Workspace Trust settings are insecure. Please make sure you have workspace trust enabled (security.workspace.trust.enabled set to true) and set "security.workspace.trust.startupPrompt" to "always" or "once" for optimal security.\n\nYou can disable this warning in VSCode settings',
+                { modal: true },
+                'Open Security Settings'
+            ).then(action => {
+                if (action === 'Open Security Settings')
+                    vscode.commands.executeCommand('workbench.action.openSettings', 'security.workspace.trust')
+            })
+        }
+
+    }
+
     public async onFileCreated(uri: vscode.Uri) {
         console.log(`[Watchtower] File created: ${vscode.workspace.asRelativePath(uri)}`)
 
