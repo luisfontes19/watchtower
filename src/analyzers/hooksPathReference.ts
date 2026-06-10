@@ -32,7 +32,8 @@ export class HooksPathReferenceAnalyzer extends StaticAnalyzer {
             detail: `This markdown file mentions \`git config --get core.hooksPath\`, which is typically used to configure a custom location for git hooks. A non-standard hooks path can be used to hide hooks outside of the usual \`.git/hooks\` or \`.husky\` folders, where they may execute arbitrary commands on git events without being noticed. Inspect the referenced hooks folder and review every hook script carefully to make sure its contents are legitimate.`,
             priority: 'medium',
             file,
-            range: rangeFromOffset(text, match.index!, match.index! + match[0].length)
+            range: rangeFromOffset(text, match.index!, match.index! + match[0].length),
+            references: ['https://opensourcemalware.com/blog/dprk-git-hooks-malware/']
         }) as Finding)
     }
 }

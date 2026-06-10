@@ -3,6 +3,19 @@ import * as path from 'path'
 import * as vscode from 'vscode'
 import { Finding } from './types'
 import { sanitizeHtml as esc } from './utils'
+
+const formatReferencesPlain = (references?: string[]): string => {
+    if (!references || references.length === 0) return ''
+    return `\n\nReferences:\n${references.map(url => `- ${url}`).join('\n')}`
+}
+
+const formatReferencesHtml = (references?: string[]): string => {
+    if (!references || references.length === 0) return ''
+    const links = references
+        .map(url => `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(url)}</a>`)
+        .join(' | ')
+    return `<div class="finding-refs">References: ${links}</div>`
+}
 /**
  * Show a save-dialog and export findings as JSON.
  */
@@ -76,10 +89,11 @@ export const generateHTMLReport = (findings: Finding[], iconUri?: vscode.Uri): s
         const fileCell = f.file
             ? `<a class="file-link" data-file="${esc(f.file)}">${esc(f.file)}</a>`
             : '\u2014'
+        const detail = `${f.detail.replace(/\n/g, ' ')}${formatReferencesPlain(f.references)}`
         return `<tr>
             <td><span class="badge" style="background:${color}">${esc(f.priority)}</span></td>
             <td>${esc(f.type)}</td>
-            <td><div class="finding-name">${esc(f.name)}</div><div class="finding-detail">${esc(f.detail.replace(/\n/g, ' '))}</div></td>
+            <td><div class="finding-name">${esc(f.name)}</div><div class="finding-detail">${esc(detail).replace(/\n/g, '<br>')}</div>${formatReferencesHtml(f.references)}</td>
             <td class="file">${fileCell}</td>
         </tr>`
     }
@@ -110,6 +124,9 @@ export const generateHTMLReport = (findings: Finding[], iconUri?: vscode.Uri): s
   .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; color: #fff; font-size: 0.85em; font-weight: 600; text-transform: uppercase; }
   .finding-name { font-weight: 600; margin-bottom: 2px; }
   .finding-detail { font-size: 0.92em; color: var(--vscode-descriptionForeground, #888); word-break: break-word; }
+    .finding-refs { margin-top: 4px; font-size: 0.86em; color: var(--vscode-descriptionForeground, #888); word-break: break-all; }
+    .finding-refs a { color: var(--vscode-textLink-foreground, #3794ff); text-decoration: none; }
+    .finding-refs a:hover { text-decoration: underline; }
   .file { font-size: 0.9em; color: var(--vscode-descriptionForeground, #888); }
   .file-link { color: var(--vscode-textLink-foreground, #3794ff); text-decoration: none; cursor: pointer; }
   .file-link:hover { text-decoration: underline; }
@@ -154,6 +171,7 @@ export const generateJSONReport = (findings: Finding[], partial: boolean = false
             name: finding.name,
             priority: finding.priority,
             detail: finding.detail,
+            references: finding.references ?? [],
             file: finding.file || null
         }))
     }

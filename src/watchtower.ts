@@ -1,11 +1,14 @@
 import * as vscode from 'vscode'
 import { AgentsAnalyzer } from './analyzers/agentsFile'
+import { BindingGypAnalyzer } from './analyzers/bindingGypFile'
 import { DevContainerAnalyzer } from './analyzers/devcontainerFile'
 import { GitHooksAnalyzer } from './analyzers/gitHooks'
 import { HooksPathReferenceAnalyzer } from './analyzers/hooksPathReference'
 import { InvisibleCodeAnalyzer } from './analyzers/invisibleCode'
 import { JsonFile } from './analyzers/jsonFile'
 import { LaunchAnalyzer } from './analyzers/launchFile'
+import { NpmrcAnalyzer } from './analyzers/npmrcFile'
+import { PackageJsonAnalyzer } from './analyzers/packageJson'
 import { SettingsAnalyzer } from './analyzers/settingsFile'
 import { StaticAnalyzer } from './analyzers/staticAnalyzer'
 import { TaskAnalyzer } from './analyzers/taskFile'
@@ -38,11 +41,14 @@ export class Watchtower {
 
         this.allAnalyzers = [
             new AgentsAnalyzer(),
+            new BindingGypAnalyzer(),
             new DevContainerAnalyzer(),
             new GitHooksAnalyzer(),
             new HooksPathReferenceAnalyzer(),
             new InvisibleCodeAnalyzer(),
             new JsonFile(),
+            new NpmrcAnalyzer(),
+            new PackageJsonAnalyzer(),
             new TaskAnalyzer(),
             new SettingsAnalyzer(),
             new LaunchAnalyzer(),
@@ -316,11 +322,18 @@ export class Watchtower {
                 )
             ).map(f => ({
                 range: f.range!,
-                hoverMessage: new vscode.MarkdownString(`**Watchtower:** ${f.name}\n\n${f.detail}`),
+                hoverMessage: new vscode.MarkdownString(`**Watchtower:** ${f.name}\n\n${this.findingDetailWithReferences(f)}`),
             }))
 
         activeEditor.setDecorations(this.highlightDecorationType, decorations)
 
+    }
+
+    private findingDetailWithReferences(finding: Finding): string {
+        if (!finding.references || finding.references.length === 0)
+            return finding.detail
+
+        return `${finding.detail}\n\nReferences:\n${finding.references.map(url => `- ${url}`).join('\n')}`
     }
 
 

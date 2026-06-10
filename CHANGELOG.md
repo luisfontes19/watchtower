@@ -30,7 +30,7 @@ You can now configure excluded files, excluded folders, and disabled rules on a 
 ### Improvements
 
 * The Findings Overview panel is now hidden by default to reduce sidebar clutter. It can be re-enabled from the sidebar context menu.
-* Added [architecture](docs/architecture.md) and [detection authoring](docs/detections.md) docs to help contributors get started.
+* Added [architecture](docs/architecture.md) and [detection authoring](docs/creating-rules.md) docs to help contributors get started.
 
 ## [0.3.3]
 

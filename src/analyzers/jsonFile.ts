@@ -8,7 +8,11 @@ import { StaticAnalyzer } from './staticAnalyzer'
 const MAX_PARAM_LENGTH = 30
 const MAX_PARAM_COUNT = 10
 
+const REFERENCE = 'https://maccarita.com/posts/idesaster/#case-study-1---remote-json-schema'
+
 export class JsonFile extends StaticAnalyzer {
+
+
 
     alertOnEditedInBackground(): boolean {
         return false
@@ -54,7 +58,8 @@ export class JsonFile extends StaticAnalyzer {
                 detail: `Schema URL (${url}) contains ${entries.length} query parameters. A high number of query parameters may indicate potential data exfiltration`,
                 priority: 'medium',
                 file: vscode.workspace.asRelativePath(fileUri, false),
-                range: schemaRange
+                range: schemaRange,
+                references: [REFERENCE]
             })
         }
 
@@ -66,7 +71,8 @@ export class JsonFile extends StaticAnalyzer {
                     detail: `Schema URL query parameter name "${name}" is ${name.length} chars. It seems too big, which may indicate data exfiltration`,
                     priority: 'medium',
                     file: vscode.workspace.asRelativePath(fileUri, false),
-                    range: schemaRange
+                    range: schemaRange,
+                    references: [REFERENCE]
                 })
             }
             if (value.length > MAX_PARAM_LENGTH) {
@@ -76,7 +82,8 @@ export class JsonFile extends StaticAnalyzer {
                     detail: `Schema URL query parameter value "${value}" is ${value.length} chars. It seems too big, which may indicate data exfiltration`,
                     priority: 'medium',
                     file: vscode.workspace.asRelativePath(fileUri, false),
-                    range: schemaRange
+                    range: schemaRange,
+                    references: [REFERENCE]
                 })
             }
         }

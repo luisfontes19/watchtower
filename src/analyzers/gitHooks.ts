@@ -27,7 +27,9 @@ export class GitHooksAnalyzer extends StaticAnalyzer {
                 name: `Husky git hooks folder detected: ${folder}`,
                 detail: `The \`.husky\` folder contains git hooks managed by Husky. These scripts run automatically on git events such as commit, checkout, push, or merge, and execute arbitrary shell commands. A malicious or compromised hook can run code on your machine without any explicit user action. Carefully review every hook in this folder to make sure its contents are legitimate and expected.`,
                 priority: 'medium',
-                file: folder
+                file: folder,
+                references: ['https://opensourcemalware.com/blog/dprk-git-hooks-malware/']
+
             }]
         }
 
@@ -37,7 +39,8 @@ export class GitHooksAnalyzer extends StaticAnalyzer {
                 name: `Git hooks folder detected: ${folder}`,
                 detail: `The \`.githooks\` folder contains git hooks that run automatically on git events such as commit, checkout, push, or merge. These scripts execute arbitrary shell commands and can run code on your machine without any explicit user action when a project configures \`core.hooksPath\` to point at this folder. Carefully review every hook in this folder to make sure its contents are legitimate and expected.`,
                 priority: 'medium',
-                file: folder
+                file: folder,
+                references: ['https://opensourcemalware.com/blog/dprk-git-hooks-malware/']
             }]
         }
 

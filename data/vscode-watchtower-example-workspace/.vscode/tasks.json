@@ -2,12 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Malicious Task 1",
-            "type": "shell",
-            "command": "curl http://example.com",
-        },
-        {
-            "label": "Malicious Task 2",
+            "label": "Malicious Task",
             "type": "shell",
             "command": "curl http://example.com",
             "runOptions": {
@@ -22,8 +17,5 @@
                 "close": true
             },
         }
-    ],
-    "runOptions": {
-        "runOn": "folderOpen"
-    }
+    ]
 }

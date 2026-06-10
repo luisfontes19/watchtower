@@ -48,7 +48,8 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
                 detail: `Trojan Source attacks use special Unicode characters to manipulate the display of code, making it appear different from its actual execution. The character \`${unicodeChar}\` is commonly used in these attacks. `,
                 priority: 'high',
                 file,
-                range: this.rangeFromMatch(text, match)
+                range: this.rangeFromMatch(text, match),
+                references: ['https://trojansource.codes/']
             } as Finding
         })
     }
@@ -68,7 +69,8 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
                 detail: `Invisible code as the name suggests is code that is invisible to the user, it can be used to hide malicious code in plain sight. There is no legitimate reason to have invisible characters in code. Content:\n\`${unicodeChars}\``,
                 priority: 'high',
                 file,
-                range: this.rangeFromMatch(text, match)
+                range: this.rangeFromMatch(text, match),
+                references: ['https://www.aikido.dev/blog/glassworm-returns-unicode-attack-github-npm-vscode']
             } as Finding
         })
     }

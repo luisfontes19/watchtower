@@ -9,6 +9,8 @@ export enum FindingType {
     InvisibleCode = "Invisible Code",
     AutoApprove = "AI Auto-Approve",
     PreinstallScript = "Preinstall Script",
+    InstallScript = "Postinstall Script",
+    BindingGyp = "binding.gyp",
     MaliciousExtension = "Malicious Extension",
     GitHook = "Git Hook"
 }
@@ -19,7 +21,8 @@ export interface Finding {
     name: string,
     detail: string,
     priority: 'low' | 'medium' | 'high',
-    range?: vscode.Range
+    range?: vscode.Range,
+    references?: string[]
 }
 
 export enum InlineFindingType {

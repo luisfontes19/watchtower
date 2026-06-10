@@ -32,7 +32,7 @@ The central singleton that owns all scan logic and state. It holds:
 
 ### `analyzers/` — Detection Logic
 
-Each analyzer extends `StaticAnalyzer` and encapsulates detection for a specific context. See [detections.md](detections.md) for the full guide on creating analyzers and rules.
+Each analyzer extends `StaticAnalyzer` and encapsulates detection for a specific context. See [creating-rules.md](creating-rules.md) for the full guide on creating analyzers and rules.
 
 The key design principle: **analyzers are stateless and isolated**. They receive a file and return findings. They don't know about other analyzers, the UI, or the scan lifecycle. This makes them easy to test independently.
 
@@ -101,7 +101,7 @@ A list of regex patterns matching commands commonly used for RCE or data exfiltr
 
 | I want to... | Look at... |
 |---|---|
-| Add a new detection | [detections.md](detections.md) and `src/analyzers/` |
+| Add a new detection | [creating-rules.md](creating-rules.md) and `src/analyzers/` |
 | Add a new command | Register in `extension.ts`, implement in `watchtower.ts` |
 | Change the sidebar UI | `src/providers/` |
 | Add a new setting | `src/settings.ts` + `package.json` (contributes.configuration) |

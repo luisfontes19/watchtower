@@ -62,7 +62,7 @@ Found a threat pattern Watchtower should detect? Open an issue or PR on [GitHub]
 To get started with the codebase:
 
 - **[Architecture overview](docs/architecture.md)** — how the extension is organized and where to look
-- **[Creating detections](docs/detections.md)** — how to add new analyzers and rules
+- **[Creating detections](docs/creating-rules.md)** — how to add new analyzers and rules
 
 ## 📝 License
 

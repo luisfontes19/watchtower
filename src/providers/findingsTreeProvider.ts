@@ -16,6 +16,13 @@ export class FindingsTreeProvider implements vscode.WebviewViewProvider {
 
     private hoverDecoration = vscode.window.createTextEditorDecorationType({})
 
+    private getDetailWithReferencesMarkdown(finding: Finding): string {
+        const references = finding.references && finding.references.length > 0
+            ? `\n\n**References**\n\n${finding.references.map(url => `- ${url}`).join('\n')}`
+            : ''
+        return `${finding.detail}${references}`
+    }
+
     resolveWebviewView(webviewView: vscode.WebviewView) {
         this._view = webviewView
         webviewView.webview.options = { enableScripts: true, enableCommandUris: true }
@@ -58,7 +65,7 @@ export class FindingsTreeProvider implements vscode.WebviewViewProvider {
             const hoverMessage = new vscode.MarkdownString()
             hoverMessage.appendMarkdown(`**🗼 Watchtower — ${finding.type}**\n\n`)
             hoverMessage.appendMarkdown(`**${finding.name}**\n\n`)
-            hoverMessage.appendMarkdown(finding.detail.replace(/\n/g, '\n\n'))
+            hoverMessage.appendMarkdown(this.getDetailWithReferencesMarkdown(finding).replace(/\n/g, '\n\n'))
             editor.setDecorations(this.hoverDecoration, [{ range, hoverMessage }])
         }
     }
