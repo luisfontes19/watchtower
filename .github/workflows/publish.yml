@@ -1,18 +1,30 @@
 name: Publish VS Code Extension
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: write
     steps:
 
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -24,11 +36,81 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Install vsce
-        run: pnpm install -g @vscode/vsce
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        id: bump
+        run: |
+          NEW_VERSION=$(npm version ${{ github.event.inputs.version_bump }} --no-git-tag-version)
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "version_plain=${NEW_VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Get last tag
+        id: last_tag
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "tag=${LAST_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Build changelog entry
+        id: changelog
+        run: |
+          VERSION=${{ steps.bump.outputs.version_plain }}
+          LAST_TAG=${{ steps.last_tag.outputs.tag }}
+
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s" --no-merges)
+          else
+            COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty=format:"- %s" --no-merges)
+          fi
+
+          # Build the new changelog block
+          NEW_ENTRY="## [${VERSION}]"$'\n\n'"${COMMITS}"
+
+          # Prepend after the first line (the # title)
+          TITLE=$(head -1 CHANGELOG.md)
+          REST=$(tail -n +2 CHANGELOG.md)
+          printf '%s\n\n%s\n%s\n' "$TITLE" "$NEW_ENTRY" "$REST" > CHANGELOG.md
+
+          # Store release notes for GitHub release (multiline-safe)
+          {
+            echo "notes<<EOF"
+            echo "$COMMITS"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Install vsce and ovsx
+        run: pnpm install -g @vscode/vsce ovsx
+
+      - name: Package extension
+        run: pnpm run package
+
+      - name: Commit changelog and version bump
+        run: |
+          git add CHANGELOG.md package.json
+          git commit -m "Release ${{ steps.bump.outputs.version }}"
+
+      - name: Create and push tag
+        run: |
+          git tag ${{ steps.bump.outputs.version }}
+          git push origin main --follow-tags
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ steps.bump.outputs.version }} *.vsix \
+            --title "${{ steps.bump.outputs.version }}" \
+            --notes "${{ steps.changelog.outputs.notes }}"
 
       - name: Publish to VS Code Marketplace
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: pnpm run publish
-        # Remove --no-dependencies if you want to package dependencies
+        run: vsce publish --no-dependencies --packagePath *.vsix
+
+      - name: Publish to Open VSX
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: ovsx publish *.vsix --pat $OVSX_PAT
