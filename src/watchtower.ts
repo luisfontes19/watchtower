@@ -11,6 +11,7 @@ import { NpmrcAnalyzer } from './analyzers/npmrcFile'
 import { PackageJsonAnalyzer } from './analyzers/packageJson'
 import { SettingsAnalyzer } from './analyzers/settingsFile'
 import { StaticAnalyzer } from './analyzers/staticAnalyzer'
+import { PthFileAnalyzer } from './analyzers/pthFile'
 import { TaskAnalyzer } from './analyzers/taskFile'
 import { FindingsOverviewProvider } from './providers/findingsOverviewProvider'
 import { FindingsTreeProvider } from './providers/findingsTreeProvider'
@@ -52,6 +53,7 @@ export class Watchtower {
             new TaskAnalyzer(),
             new SettingsAnalyzer(),
             new LaunchAnalyzer(),
+            new PthFileAnalyzer(),
         ]
 
         this.settings = Settings.getInstance()

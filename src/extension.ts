@@ -50,6 +50,8 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('watchtower.editWorkspaceExcludedFiles', watchtower.commandEditWorkspaceExcludedFiles.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.editWorkspaceExcludedFolders', watchtower.commandEditWorkspaceExcludedFolders.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.toggleAutoUninstallMalicious', watchtower.commandToggleAutoUninstallMalicious.bind(watchtower)),
+		vscode.commands.registerCommand('watchtower.excludeFile', (uri: vscode.Uri) => watchtower.commandExcludeFile(uri)),
+		vscode.commands.registerCommand('watchtower.includeFile', (uri: vscode.Uri) => watchtower.commandIncludeFile(uri)),
 	]
 
 	commands.forEach(command => context.subscriptions.push(command))
@@ -95,6 +97,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}))
 
 
+	watchtower.initExcludedFilesContext()
 	watchtower.checkWorkspaceTrustSettings()
 	watchtower.showWhatsNewIfUpdated(context)
 	watchtower.runInitialScan()

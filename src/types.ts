@@ -12,7 +12,8 @@ export enum FindingType {
     InstallScript = "Postinstall Script",
     BindingGyp = "binding.gyp",
     MaliciousExtension = "Malicious Extension",
-    GitHook = "Git Hook"
+    GitHook = "Git Hook",
+    AutorunCode = "Auto run code"
 }
 
 export interface Finding {
