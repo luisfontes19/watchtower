@@ -95,7 +95,8 @@ jobs:
       - name: Create and push tag
         run: |
           git tag ${{ steps.bump.outputs.version }}
-          git push origin main --follow-tags
+          git push origin main
+          git push origin ${{ steps.bump.outputs.version }}
 
       - name: Create GitHub release
         env:
