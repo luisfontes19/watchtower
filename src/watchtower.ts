@@ -9,9 +9,9 @@ import { JsonFile } from './analyzers/jsonFile'
 import { LaunchAnalyzer } from './analyzers/launchFile'
 import { NpmrcAnalyzer } from './analyzers/npmrcFile'
 import { PackageJsonAnalyzer } from './analyzers/packageJson'
+import { PthFileAnalyzer } from './analyzers/pthFile'
 import { SettingsAnalyzer } from './analyzers/settingsFile'
 import { StaticAnalyzer } from './analyzers/staticAnalyzer'
-import { PthFileAnalyzer } from './analyzers/pthFile'
 import { TaskAnalyzer } from './analyzers/taskFile'
 import { FindingsOverviewProvider } from './providers/findingsOverviewProvider'
 import { FindingsTreeProvider } from './providers/findingsTreeProvider'
@@ -425,28 +425,60 @@ export class Watchtower {
         vscode.commands.executeCommand('setContext', 'watchtower.excludedFilePaths', absolutePaths)
     }
 
+    private async editPatternList(title: string, addPrompt: string, addPlaceholder: string, currentPatterns: string[]): Promise<string[] | undefined> {
+        const ADD_LABEL = '$(add)  Add new pattern...'
+        let patterns = [...currentPatterns]
+
+        while (true) {
+            const items: vscode.QuickPickItem[] = [
+                ...patterns.map(p => ({ label: p, picked: true })),
+                { label: ADD_LABEL, picked: false, alwaysShow: true }
+            ]
+
+            const selected = await vscode.window.showQuickPick(items, {
+                canPickMany: true,
+                title,
+                placeHolder: 'Uncheck to remove · select "Add new pattern" to add one'
+            })
+
+            if (selected === undefined) return undefined
+
+            const addNewSelected = selected.some(i => i.label === ADD_LABEL)
+            const kept = selected.filter(i => i.label !== ADD_LABEL).map(i => i.label)
+
+            if (!addNewSelected) return kept
+
+            const newPattern = await vscode.window.showInputBox({
+                prompt: addPrompt,
+                placeHolder: addPlaceholder
+            })
+            if (newPattern === undefined) return undefined
+            patterns = newPattern.trim() ? [...kept, newPattern.trim()] : kept
+        }
+    }
+
     public async commandEditWorkspaceExcludedFiles(): Promise<void> {
         const current = this.settings.getWorkspaceExcludedFiles()
-        const input = await vscode.window.showInputBox({
-            prompt: 'Enter glob patterns for files to exclude from scans (comma-separated)',
-            value: current.join(', '),
-            placeHolder: 'e.g. **/generated/*, src/vendor/**'
-        })
-        if (input === undefined) return
-        const patterns = input.split(',').map(p => p.trim()).filter(Boolean)
+        const patterns = await this.editPatternList(
+            'Excluded Files',
+            'Enter a glob pattern for files to exclude from scans',
+            'e.g. **/generated/*, src/vendor/**',
+            current
+        )
+        if (patterns === undefined) return
         await this.settings.setWorkspaceExcludedFiles(patterns)
         this.settingsTree.refresh()
     }
 
     public async commandEditWorkspaceExcludedFolders(): Promise<void> {
         const current = this.settings.getWorkspaceExcludedFolders()
-        const input = await vscode.window.showInputBox({
-            prompt: 'Enter glob patterns for folders to exclude from scans (comma-separated)',
-            value: current.join(', '),
-            placeHolder: 'e.g. **/build/**, **/vendor/**'
-        })
-        if (input === undefined) return
-        const patterns = input.split(',').map(p => p.trim()).filter(Boolean)
+        const patterns = await this.editPatternList(
+            'Excluded Folders',
+            'Enter a glob pattern for folders to exclude from scans',
+            'e.g. **/build/**, **/vendor/**',
+            current
+        )
+        if (patterns === undefined) return
         await this.settings.setWorkspaceExcludedFolders(patterns)
         this.settingsTree.refresh()
     }
