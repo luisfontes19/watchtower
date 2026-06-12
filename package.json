@@ -237,6 +237,14 @@
       {
         "command": "watchtower.toggleAutoUninstallMalicious",
         "title": "Watchtower: Toggle Auto Uninstall Malicious"
+      },
+      {
+        "command": "watchtower.excludeFile",
+        "title": "Watchtower: Exclude file from scan"
+      },
+      {
+        "command": "watchtower.includeFile",
+        "title": "Watchtower: Re-add file to scan"
       }
     ],
     "menus": {
@@ -276,6 +284,26 @@
         {
           "command": "watchtower.toggleAutoUninstallMalicious",
           "when": "false"
+        },
+        {
+          "command": "watchtower.excludeFile",
+          "when": "false"
+        },
+        {
+          "command": "watchtower.includeFile",
+          "when": "false"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "watchtower.excludeFile",
+          "when": "!explorerResourceIsFolder && resourcePath not in watchtower.excludedFilePaths",
+          "group": "watchtower@1"
+        },
+        {
+          "command": "watchtower.includeFile",
+          "when": "!explorerResourceIsFolder && resourcePath in watchtower.excludedFilePaths",
+          "group": "watchtower@1"
         }
       ],
       "view/title": [

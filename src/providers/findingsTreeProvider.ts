@@ -32,6 +32,16 @@ export class FindingsTreeProvider implements vscode.WebviewViewProvider {
                 const finding = items[msg.index]
                 if (finding) this.revealFinding(finding)
             }
+            if (msg.command === 'excludeFile' && msg.index !== undefined) {
+                const items = this.getFilteredFindings()
+                const finding = items[msg.index]
+                if (!finding?.file) return
+                const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+                if (!workspaceFolder) return
+                const filePath = finding.file.endsWith('/') ? finding.file.slice(0, -1) : finding.file
+                const uri = vscode.Uri.joinPath(workspaceFolder.uri, filePath)
+                vscode.commands.executeCommand('watchtower.excludeFile', uri)
+            }
         })
         this.render()
     }
@@ -115,17 +125,43 @@ export class FindingsTreeProvider implements vscode.WebviewViewProvider {
     .empty { text-align: center; padding: 24px 12px; color: var(--vscode-descriptionForeground); font-size: 0.9em; }
     .empty a { color: var(--vscode-textLink-foreground); text-decoration: none; }
     .empty a:hover { text-decoration: underline; }
+    #ctx-menu { display: none; position: fixed; z-index: 1000; background: var(--vscode-menu-background); border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border)); border-radius: 4px; padding: 4px 0; min-width: 180px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    #ctx-menu .ctx-item { padding: 6px 14px; cursor: pointer; font-size: 0.9em; color: var(--vscode-menu-foreground); }
+    #ctx-menu .ctx-item:hover { background: var(--vscode-menu-selectionBackground); color: var(--vscode-menu-selectionForeground); }
 </style></head><body>
 ${empty}${listItems}
+<div id="ctx-menu"><div class="ctx-item" id="ctx-exclude">Exclude from scan</div></div>
 <script>
     const vscode = acquireVsCodeApi();
+    const ctxMenu = document.getElementById('ctx-menu');
+    const ctxExclude = document.getElementById('ctx-exclude');
+    let activeIndex = -1;
+
     document.querySelectorAll('.item').forEach(el => {
         el.addEventListener('click', () => {
             document.querySelectorAll('.item.selected').forEach(s => s.classList.remove('selected'));
             el.classList.add('selected');
             vscode.postMessage({ command: 'revealFinding', index: parseInt(el.dataset.index) });
         });
+        el.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            activeIndex = parseInt(el.dataset.index);
+            ctxMenu.style.display = 'block';
+            const x = Math.min(e.clientX, window.innerWidth - ctxMenu.offsetWidth - 4);
+            const y = Math.min(e.clientY, window.innerHeight - ctxMenu.offsetHeight - 4);
+            ctxMenu.style.left = x + 'px';
+            ctxMenu.style.top = y + 'px';
+        });
     });
+
+    ctxExclude.addEventListener('click', () => {
+        if (activeIndex >= 0) vscode.postMessage({ command: 'excludeFile', index: activeIndex });
+        ctxMenu.style.display = 'none';
+        activeIndex = -1;
+    });
+
+    document.addEventListener('click', () => { ctxMenu.style.display = 'none'; activeIndex = -1; });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { ctxMenu.style.display = 'none'; activeIndex = -1; } });
 </script>
 </body></html>`
     }

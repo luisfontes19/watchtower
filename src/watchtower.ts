@@ -383,6 +383,48 @@ export class Watchtower {
         this.settingsTree.refresh()
     }
 
+    public async commandExcludeFile(uri: vscode.Uri): Promise<void> {
+        const relPath = vscode.workspace.asRelativePath(uri, false)
+        const current = this.settings.getWorkspaceExcludedFiles()
+        if (!current.includes(relPath)) {
+            await this.settings.setWorkspaceExcludedFiles([...current, relPath])
+        }
+        this.findings = this.findings.filter(f => f.file !== relPath)
+        this.updateViews()
+        this.syncExcludedFilesContext()
+    }
+
+    public async commandIncludeFile(uri: vscode.Uri): Promise<void> {
+        const relPath = vscode.workspace.asRelativePath(uri, false)
+        const current = this.settings.getWorkspaceExcludedFiles()
+        await this.settings.setWorkspaceExcludedFiles(current.filter(p => p !== relPath))
+        this.syncExcludedFilesContext()
+
+        const newFindings = await this.scanFile(uri)
+        for (const f of newFindings) {
+            if (!this.isDuplicateFolderFinding(f, this.findings))
+                this.findings.push(f)
+        }
+        this.updateViews()
+    }
+
+    public initExcludedFilesContext(): void {
+        this.syncExcludedFilesContext()
+    }
+
+    private syncExcludedFilesContext(): void {
+        const patterns = this.settings.getWorkspaceExcludedFiles()
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+        if (!workspaceFolder) return
+
+        // Only exact paths (no glob chars) can be matched against resourcePath in when clauses
+        const absolutePaths = patterns
+            .filter(p => !/[*?[{]/.test(p))
+            .map(p => vscode.Uri.joinPath(workspaceFolder.uri, p).fsPath)
+
+        vscode.commands.executeCommand('setContext', 'watchtower.excludedFilePaths', absolutePaths)
+    }
+
     public async commandEditWorkspaceExcludedFiles(): Promise<void> {
         const current = this.settings.getWorkspaceExcludedFiles()
         const input = await vscode.window.showInputBox({
