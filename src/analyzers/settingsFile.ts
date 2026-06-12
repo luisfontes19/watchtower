@@ -76,7 +76,8 @@ export class SettingsAnalyzer extends StaticAnalyzer {
                         detail: `Setting "${currentPath}" points to a custom binary path: "${value}". This could be an attempt to execute malicious code.`,
                         priority: 'high',
                         file: vscode.workspace.asRelativePath(uri, false),
-                        range: rangeOfKeyInText(textContent, key)
+                        range: rangeOfKeyInText(textContent, key),
+                        references: ['https://luisfontes19.github.io/living-of-the-code/#vscode-settings']
                     })
                 }
                 if (typeof value === 'object') {

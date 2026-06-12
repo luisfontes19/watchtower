@@ -52,7 +52,8 @@ export class DevContainerAnalyzer extends StaticAnalyzer {
                     detail: `The extension '${r.extensionId}' is being defined in devcontainer.json and is flagged as potentially malicious. Please remove the extension before using the devcontainer.`,
                     priority: 'medium',
                     file: vscode.workspace.asRelativePath(uri, false),
-                    range: rangeFromJsonNode(text, ['customizations', 'vscode', 'extensions', extensions.indexOf(r.extensionId)])
+                    range: rangeFromJsonNode(text, ['customizations', 'vscode', 'extensions', extensions.indexOf(r.extensionId)]),
+                    references: ["https://luisfontes19.github.io/living-of-the-code/#devcontainer"]
                 })
             })
         })

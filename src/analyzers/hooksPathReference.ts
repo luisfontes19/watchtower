@@ -4,6 +4,8 @@ import { Finding, FindingType } from '../types'
 import { rangeFromOffset } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
 
+const REFERENCES = ['https://luisfontes19.github.io/living-of-the-code/#git-hooks', 'https://opensourcemalware.com/blog/dprk-git-hooks-malware/']
+
 export class HooksPathReferenceAnalyzer extends StaticAnalyzer {
 
     public static readonly HOOKS_PATH_PATTERN = /git\s+config\s+--get\s+core\.hooksPath/g
@@ -33,7 +35,7 @@ export class HooksPathReferenceAnalyzer extends StaticAnalyzer {
             priority: 'medium',
             file,
             range: rangeFromOffset(text, match.index!, match.index! + match[0].length),
-            references: ['https://opensourcemalware.com/blog/dprk-git-hooks-malware/']
+            references: REFERENCES
         }) as Finding)
     }
 }

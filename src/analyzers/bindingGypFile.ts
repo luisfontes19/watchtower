@@ -11,7 +11,7 @@ interface Indicator {
     highRisk: boolean
 }
 
-const REFERENCE = 'https://www.aikido.dev/blog/exploring-binding-gyp-npm-build-system'
+const REFERENCES = ['https://luisfontes19.github.io/living-of-the-code/#node-gyp', 'https://www.aikido.dev/blog/exploring-binding-gyp-npm-build-system']
 
 const INDICATORS: Indicator[] = [
     {
@@ -67,6 +67,8 @@ export class BindingGypAnalyzer extends StaticAnalyzer {
     detectBindingGypRisk(text: string, uri: vscode.Uri): Finding[] {
         const file = vscode.workspace.asRelativePath(uri, false)
         const indicators = this.collectIndicators(text)
+
+        // If no indicators but the file is present, we still want to flag it as an install-time execution surface worth manual review
         if (indicators.length === 0) {
             return [{
                 type: FindingType.BindingGyp,
@@ -78,7 +80,7 @@ export class BindingGypAnalyzer extends StaticAnalyzer {
                 ].join('\n\n'),
                 priority: 'medium',
                 file,
-                references: [REFERENCE]
+                references: REFERENCES
             }]
         }
 
@@ -94,7 +96,7 @@ export class BindingGypAnalyzer extends StaticAnalyzer {
             priority: indicator.highRisk ? 'high' : 'medium',
             file,
             range: rangeFromOffset(text, indicator.start, indicator.end),
-            references: [REFERENCE]
+            references: REFERENCES
         }))
     }
 

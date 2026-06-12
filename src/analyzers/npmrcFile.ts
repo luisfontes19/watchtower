@@ -57,7 +57,8 @@ export class NpmrcAnalyzer extends StaticAnalyzer {
                 detail: `The \.npmrc setting \`${match[1]}=${value}\` controls which executable or command npm invokes. Attackers can use this to run unexpected programs during npm operations. Verify this value is trusted and expected.`,
                 priority: 'high',
                 file,
-                range: rangeFromOffset(text, offset + keyStart, offset + keyStart + match[1].length)
+                range: rangeFromOffset(text, offset + keyStart, offset + keyStart + match[1].length),
+                references: ['https://luisfontes19.github.io/living-of-the-code/#npmrc']
             })
 
             offset += line.length + 1

@@ -66,7 +66,8 @@ export class LaunchAnalyzer extends StaticAnalyzer {
             detail: issues.join('\n'),
             priority,
             file: vscode.workspace.asRelativePath(uri),
-            range: rangeFromJsonNode(text, ['configurations', index, "program"])
+            range: rangeFromJsonNode(text, ['configurations', index, "program"]),
+            references: ['https://luisfontes19.github.io/living-of-the-code/#vscode-launch']
         }]
     }
 }

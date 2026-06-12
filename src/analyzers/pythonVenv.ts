@@ -18,7 +18,8 @@ export class PythonVenv extends StaticAnalyzer {
                 name: `Python venv binary detected`,
                 detail: `When loading a project with a venv folder VSCode will automatically call the python binary inside (unless in restricted mode) which can be abused by an attacker. It is not a common pattern to commit this folder. If you received the project with the \`.venv\` folder consider deleting it and creating a new one with \`python -m venv .venv\` to ensure the integrity of the virtual environment.`,
                 priority: 'high',
-                file: vscode.workspace.asRelativePath(uri, false)
+                file: vscode.workspace.asRelativePath(uri, false),
+                references: ['https://luisfontes19.github.io/living-of-the-code/#python-venv']
             } as Finding
         ]
     }

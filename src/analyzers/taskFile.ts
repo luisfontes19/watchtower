@@ -75,7 +75,8 @@ export class TaskAnalyzer extends StaticAnalyzer {
             detail: issues.join('\n'),
             priority,
             file: vscode.workspace.asRelativePath(uri),
-            range: rangeFromJsonNode(text, ['tasks', index])
+            range: rangeFromJsonNode(text, ['tasks', index]),
+            references: ['https://luisfontes19.github.io/living-of-the-code/#vscode-tasks']
         }]
     }
 

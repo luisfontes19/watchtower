@@ -5,6 +5,8 @@ import { Finding, FindingType } from '../types'
 import { rangeFromJsonNode } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
 
+const REFERENCES = ['https://luisfontes19.github.io/living-of-the-code/#npm-install-scripts', 'https://opensourcemalware.com/blog/malware-abuses-vscode-lifecycle-scripts']
+
 export class PackageJsonAnalyzer extends StaticAnalyzer {
     alertOnEditedInBackground(): boolean {
         return false
@@ -38,7 +40,7 @@ export class PackageJsonAnalyzer extends StaticAnalyzer {
                 priority: priority,
                 file: vscode.workspace.asRelativePath(uri, false),
                 range: rangeFromJsonNode(text, ['scripts', 'preinstall']),
-                references: ['https://opensourcemalware.com/blog/malware-abuses-vscode-lifecycle-scripts']
+                references: REFERENCES
             })
         }
 
@@ -52,7 +54,7 @@ export class PackageJsonAnalyzer extends StaticAnalyzer {
                 priority: priority,
                 file: vscode.workspace.asRelativePath(uri, false),
                 range: rangeFromJsonNode(text, ['scripts', 'postinstall']),
-                references: ['https://opensourcemalware.com/blog/malware-abuses-vscode-lifecycle-scripts']
+                references: REFERENCES
             })
         }
 

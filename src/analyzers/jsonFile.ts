@@ -8,7 +8,7 @@ import { StaticAnalyzer } from './staticAnalyzer'
 const MAX_PARAM_LENGTH = 30
 const MAX_PARAM_COUNT = 10
 
-const REFERENCE = 'https://maccarita.com/posts/idesaster/#case-study-1---remote-json-schema'
+const REFERENCES = ['https://luisfontes19.github.io/living-of-the-code/#json-schema-exfiltration', 'https://maccarita.com/posts/idesaster/#case-study-1---remote-json-schema']
 
 export class JsonFile extends StaticAnalyzer {
 
@@ -59,7 +59,7 @@ export class JsonFile extends StaticAnalyzer {
                 priority: 'medium',
                 file: vscode.workspace.asRelativePath(fileUri, false),
                 range: schemaRange,
-                references: [REFERENCE]
+                references: REFERENCES
             })
         }
 
@@ -72,7 +72,7 @@ export class JsonFile extends StaticAnalyzer {
                     priority: 'medium',
                     file: vscode.workspace.asRelativePath(fileUri, false),
                     range: schemaRange,
-                    references: [REFERENCE]
+                    references: REFERENCES
                 })
             }
             if (value.length > MAX_PARAM_LENGTH) {
@@ -83,7 +83,7 @@ export class JsonFile extends StaticAnalyzer {
                     priority: 'medium',
                     file: vscode.workspace.asRelativePath(fileUri, false),
                     range: schemaRange,
-                    references: [REFERENCE]
+                    references: REFERENCES
                 })
             }
         }

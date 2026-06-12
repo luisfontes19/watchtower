@@ -49,7 +49,7 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
                 priority: 'high',
                 file,
                 range: this.rangeFromMatch(text, match),
-                references: ['https://trojansource.codes/']
+                references: ['https://luisfontes19.github.io/living-of-the-code/#trojan-source', 'https://trojansource.codes/']
             } as Finding
         })
     }
@@ -70,7 +70,7 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
                 priority: 'high',
                 file,
                 range: this.rangeFromMatch(text, match),
-                references: ['https://www.aikido.dev/blog/glassworm-returns-unicode-attack-github-npm-vscode']
+                references: ['https://luisfontes19.github.io/living-of-the-code/#invisible-unicode', 'https://www.aikido.dev/blog/glassworm-returns-unicode-attack-github-npm-vscode']
             } as Finding
         })
     }
