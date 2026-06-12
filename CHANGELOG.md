@@ -1,5 +1,16 @@
 # Watchtower Changelog
 
+## [0.4.4]
+
+- Release v0.4.3
+- Fix github deployment workflow
+- Release v0.4.2
+- Add support for publishing to OpenVSX
+- Improvements for marketplace search
+- Add rules for binding.gyp and npmrc
+- Add sanity checks for trusted workspace configs
+- Fix settings.json file
+
 ## [0.4.3]
 
 - Fix github deployment workflow
