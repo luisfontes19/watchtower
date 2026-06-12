@@ -1,5 +1,12 @@
 # Watchtower Changelog
 
+## [0.5.0]
+
+- Change modal to add/remove file/folder exclusions to a more user friendly picker
+- Allow user to right click a file or finding to remove the file from scans
+- Add detections for python's .pth files
+- Add references to living-of-the-code project in the findings
+
 ## [0.4.2] - [0.4.5]
 
 - Add support for publishing to OpenVSX
