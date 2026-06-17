@@ -57,3 +57,21 @@ export const rangeOfKeyInText = (text: string, key: string): vscode.Range | unde
     const lineEnd = text.indexOf('\n', match.index)
     return new vscode.Range(line, 0, line, lineEnd === -1 ? text.length : lineEnd - text.slice(0, match.index).lastIndexOf('\n') - 1)
 }
+
+
+export const getSupportedFileExtensions = () => {
+    const allExtensions: string[] = []
+
+    for (const extension of vscode.extensions.all) {
+        const languages = extension.packageJSON?.contributes?.languages
+        if (languages) {
+            for (const lang of languages) {
+                if (lang.extensions) {
+                    allExtensions.push(...lang.extensions) // e.g. [".js", ".ts"]
+                }
+            }
+        }
+    }
+
+    return [...new Set(allExtensions)]
+}

@@ -7,6 +7,7 @@ import { HooksPathReferenceAnalyzer } from './analyzers/hooksPathReference'
 import { InvisibleCodeAnalyzer } from './analyzers/invisibleCode'
 import { JsonFile } from './analyzers/jsonFile'
 import { LaunchAnalyzer } from './analyzers/launchFile'
+import { LongWhitespaceContentAnalyzer } from './analyzers/longWhitespaceContent'
 import { NpmrcAnalyzer } from './analyzers/npmrcFile'
 import { PackageJsonAnalyzer } from './analyzers/packageJson'
 import { PthFileAnalyzer } from './analyzers/pthFile'
@@ -47,6 +48,7 @@ export class Watchtower {
             new GitHooksAnalyzer(),
             new HooksPathReferenceAnalyzer(),
             new InvisibleCodeAnalyzer(),
+            new LongWhitespaceContentAnalyzer(),
             new JsonFile(),
             new NpmrcAnalyzer(),
             new PackageJsonAnalyzer(),
