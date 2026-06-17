@@ -99,7 +99,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	watchtower.initExcludedFilesContext()
 	watchtower.checkWorkspaceTrustSettings()
-	watchtower.showWhatsNewIfUpdated(context)
+	// watchtower.showWhatsNewIfUpdated(context)
 	watchtower.runInitialScan()
 
 	if (vscode.window.activeTextEditor)
