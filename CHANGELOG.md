@@ -1,5 +1,12 @@
 # Watchtower Changelog
 
+## [0.5.1]
+
+- Improve project exclusions UX
+- Improve AGENTS.md file for creating analyzers
+- Standardize common methods in analyzers
+- Add analyzer to find code hidden after whitespaces
+
 ## [0.5.0]
 
 - Change modal to add/remove file/folder exclusions to a more user friendly picker
