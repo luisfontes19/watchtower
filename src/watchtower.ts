@@ -427,43 +427,64 @@ export class Watchtower {
         vscode.commands.executeCommand('setContext', 'watchtower.excludedFilePaths', absolutePaths)
     }
 
-    private async editPatternList(title: string, addPrompt: string, addPlaceholder: string, currentPatterns: string[]): Promise<string[] | undefined> {
-        const ADD_LABEL = '$(add)  Add new pattern...'
+    private async editPatternList(title: string, addPlaceholder: string, currentPatterns: string[]): Promise<string[] | undefined> {
         let patterns = [...currentPatterns]
 
-        while (true) {
-            const items: vscode.QuickPickItem[] = [
-                ...patterns.map(p => ({ label: p, picked: true })),
-                { label: ADD_LABEL, picked: false, alwaysShow: true }
-            ]
+        return new Promise<string[] | undefined>((resolve) => {
+            const qp = vscode.window.createQuickPick<vscode.QuickPickItem>()
+            qp.title = title
+            qp.placeholder = `Type a pattern and press Enter to add · uncheck to remove (${addPlaceholder})`
+            qp.canSelectMany = true
 
-            const selected = await vscode.window.showQuickPick(items, {
-                canPickMany: true,
-                title,
-                placeHolder: 'Uncheck to remove · select "Add new pattern" to add one'
+            let accepted = false
+            let checked = new Set<string>(patterns)
+
+            const ADD_PREFIX = '$(add) Add "'
+
+            const renderItems = (typed: string) => {
+                const base: vscode.QuickPickItem[] = patterns.map(p => ({ label: p }))
+                qp.items = typed.trim()
+                    ? [...base, { label: `${ADD_PREFIX}${typed.trim()}"`, alwaysShow: true }]
+                    : base
+                // VS Code does not re-honour `picked` on item updates — set selection explicitly
+                qp.selectedItems = qp.items.filter(i => checked.has(i.label))
+            }
+
+            renderItems('')
+
+            qp.onDidChangeSelection(selection => {
+                checked = new Set(selection.filter(i => !i.label.startsWith(ADD_PREFIX)).map(i => i.label))
             })
 
-            if (selected === undefined) return undefined
+            qp.onDidChangeValue(v => renderItems(v))
 
-            const addNewSelected = selected.some(i => i.label === ADD_LABEL)
-            const kept = selected.filter(i => i.label !== ADD_LABEL).map(i => i.label)
-
-            if (!addNewSelected) return kept
-
-            const newPattern = await vscode.window.showInputBox({
-                prompt: addPrompt,
-                placeHolder: addPlaceholder
+            qp.onDidAccept(() => {
+                const typed = qp.value.trim()
+                if (typed) {
+                    patterns = [...new Set([...checked, typed])]
+                    checked = new Set(patterns)
+                    qp.value = ''
+                    renderItems('')
+                } else {
+                    accepted = true
+                    patterns = [...checked]
+                    qp.hide()
+                }
             })
-            if (newPattern === undefined) return undefined
-            patterns = newPattern.trim() ? [...kept, newPattern.trim()] : kept
-        }
+
+            qp.onDidHide(() => {
+                resolve(accepted ? patterns : undefined)
+                qp.dispose()
+            })
+
+            qp.show()
+        })
     }
 
     public async commandEditWorkspaceExcludedFiles(): Promise<void> {
         const current = this.settings.getWorkspaceExcludedFiles()
         const patterns = await this.editPatternList(
             'Excluded Files',
-            'Enter a glob pattern for files to exclude from scans',
             'e.g. **/generated/*, src/vendor/**',
             current
         )
@@ -476,7 +497,6 @@ export class Watchtower {
         const current = this.settings.getWorkspaceExcludedFolders()
         const patterns = await this.editPatternList(
             'Excluded Folders',
-            'Enter a glob pattern for folders to exclude from scans',
             'e.g. **/build/**, **/vendor/**',
             current
         )
