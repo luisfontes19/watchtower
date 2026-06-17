@@ -19,10 +19,8 @@ export class TaskAnalyzer extends StaticAnalyzer {
     }
 
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
-        if (!content)
-            content = await vscode.workspace.fs.readFile(uri)
-
-        const textContent = new TextDecoder().decode(content)
+        const data = await this.ensureFileContent(uri, content)
+        const textContent = new TextDecoder().decode(data)
         const jsonContent = jsonc.parse(textContent) as Record<string, unknown>
 
         const tasks = jsonContent.tasks as Task[] || []

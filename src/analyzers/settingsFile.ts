@@ -48,7 +48,7 @@ export class SettingsAnalyzer extends StaticAnalyzer {
 
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
         const findings: Finding[] = []
-        const data = content ?? await vscode.workspace.fs.readFile(uri)
+        const data = await this.ensureFileContent(uri, content)
         const textContent = new TextDecoder().decode(data)
         const json = jsonc.parse(textContent) as Record<string, any>
 

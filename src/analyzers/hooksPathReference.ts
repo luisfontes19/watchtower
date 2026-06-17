@@ -19,7 +19,7 @@ export class HooksPathReferenceAnalyzer extends StaticAnalyzer {
     }
 
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
-        const data = content ?? await vscode.workspace.fs.readFile(uri)
+        const data = await this.ensureFileContent(uri, content)
         const text = new TextDecoder().decode(data)
         return this.detectHooksPathReferences(text, uri)
     }

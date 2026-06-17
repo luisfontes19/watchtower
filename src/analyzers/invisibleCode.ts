@@ -19,7 +19,7 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
     public static readonly TROJAN_SOURCE = /\u202E|\u202D|\u2067|\u2066|\u2069|\u202C|\u2068/ug
 
     async checkFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>): Promise<Finding[]> {
-        const data = content ?? await vscode.workspace.fs.readFile(uri)
+        const data = await this.ensureFileContent(uri, content)
 
         const { isBinaryFile } = await import('isbinaryfile')
         if (await isBinaryFile(Buffer.from(data))) {
@@ -76,7 +76,7 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
     }
 
     canScanFile(uri: vscode.Uri): boolean {
-        return true // we want to scan all files for invisible code, as it can be hidden anywhere
+        return super.isNotBinaryFile(uri)
     }
 
     private rangeFromMatch(text: string, match: RegExpMatchArray): vscode.Range {
