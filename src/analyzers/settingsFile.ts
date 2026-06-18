@@ -35,7 +35,7 @@ export class SettingsAnalyzer extends StaticAnalyzer {
     static readonly SENSITIVE_ENV_VARS = ['LD_PRELOAD', 'DYLD_INSERT_LIBRARIES', 'LD_LIBRARY_PATH', 'DYLD_LIBRARY_PATH', 'PYTHONPATH', 'PYTHONSTARTUP', 'NODE_PATH', 'NODE_OPTIONS', 'RUBYLIB', 'PERL5LIB']
 
     alertOnEditedInBackground(): boolean {
-        return true
+        return false
     }
 
     canScanFile(uri: vscode.Uri): boolean {

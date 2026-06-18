@@ -10,7 +10,7 @@ import { StaticAnalyzer } from './staticAnalyzer'
 export class TaskAnalyzer extends StaticAnalyzer {
 
     alertOnEditedInBackground(): boolean {
-        return true
+        return false
     }
 
 

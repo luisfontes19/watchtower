@@ -8,7 +8,7 @@ const REFERENCES = ['https://luisfontes19.github.io/living-of-the-code/#git-hook
 export class GitHooksAnalyzer extends StaticAnalyzer {
 
     alertOnEditedInBackground(): boolean {
-        return true
+        return false
     }
 
     canScanFile(uri: vscode.Uri): boolean {

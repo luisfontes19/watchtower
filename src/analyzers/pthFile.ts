@@ -6,7 +6,7 @@ import { StaticAnalyzer } from './staticAnalyzer'
 export class PthFileAnalyzer extends StaticAnalyzer {
 
     alertOnEditedInBackground(): boolean {
-        return true
+        return false
     }
 
     canScanFile(uri: vscode.Uri): boolean {

@@ -8,7 +8,7 @@ import { StaticAnalyzer } from './staticAnalyzer'
 export class LaunchAnalyzer extends StaticAnalyzer {
 
     alertOnEditedInBackground(): boolean {
-        return true
+        return false
     }
 
     canScanFile(uri: vscode.Uri): boolean {

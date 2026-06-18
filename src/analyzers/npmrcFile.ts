@@ -9,7 +9,7 @@ export class NpmrcAnalyzer extends StaticAnalyzer {
     private static readonly COMMAND_CONFIG_KEYS = ['call', 'editor', 'git', 'script-shell', 'shell']
 
     alertOnEditedInBackground(): boolean {
-        return true
+        return false
     }
 
     canScanFile(uri: vscode.Uri): boolean {
