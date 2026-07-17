@@ -121,9 +121,10 @@ export class Watchtower {
 
         const trustConfig = vscode.workspace.getConfiguration('security.workspace.trust')
         const enabled = trustConfig.get('enabled') === true
-        const startupPrompt = trustConfig.get('startupPrompt')
+        const startupPromptInspect = trustConfig.inspect<string>('startupPrompt')
+        const startupPromptExplicit = startupPromptInspect?.globalValue ?? startupPromptInspect?.workspaceValue
 
-        if (!enabled || startupPrompt === 'never') {
+        if (!enabled || startupPromptExplicit === 'never') {
             vscode.window.showWarningMessage(
                 'Watchtower: Workspace Trust settings are insecure. Please make sure you have workspace trust enabled (security.workspace.trust.enabled set to true) and set "security.workspace.trust.startupPrompt" to "always" or "once" for optimal security.\n\nYou can disable this warning in VSCode settings',
                 { modal: true },
