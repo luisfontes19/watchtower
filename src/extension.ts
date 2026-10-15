@@ -16,6 +16,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const settings = Settings.getInstance(context)
 
+	logger.info(`Activating (workspace trusted: ${vscode.workspace.isTrusted}, startup scans: ${settings.getGlobalStartupScans()}, remote: ${vscode.env.remoteName ?? 'none'})`)
+
 	const findingsTree = new FindingsTreeProvider()
 	const findingsOverview = new FindingsOverviewProvider()
 	const settingsTree = new SettingsTreeProvider()
@@ -74,8 +76,12 @@ export function activate(context: vscode.ExtensionContext) {
 		watcher.onDidChange((uri) => watchtower.onFileChanged(uri)),
 	]
 
-	if (settings.shouldRunRealtimeScanForWorkspace())
+	if (settings.shouldRunRealtimeScanForWorkspace()) {
+		logger.info('Real-time detection enabled')
 		realTimeListeners.forEach(listener => context.subscriptions.push(listener))
+	} else {
+		logger.info('Real-time detection disabled for this workspace')
+	}
 
 
 	/////////////////////////////

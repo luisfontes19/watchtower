@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as vscode from 'vscode'
+import { logger } from './logger'
 import { Finding } from './types'
 import { sanitizeHtml as esc } from './utils'
 
@@ -35,11 +36,13 @@ export const exportToJSON = async (findings: Finding[], partial: boolean): Promi
 
         const jsonData = generateJSONReport(findings, partial)
         await fs.promises.writeFile(fileUri.fsPath, jsonData, 'utf8')
+        logger.info(`Exported ${findings.length} finding(s) to ${fileUri.fsPath}`)
 
         vscode.window.showInformationMessage(
             `Report exported successfully to ${path.basename(fileUri.fsPath)}`
         )
     } catch (error) {
+        logger.error('Failed to export report', error)
         vscode.window.showErrorMessage(
             `Failed to export report: ${error instanceof Error ? error.message : 'Unknown error'}`
         )

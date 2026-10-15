@@ -135,6 +135,7 @@ export class Watchtower {
         const startupPromptExplicit = startupPromptInspect?.globalValue ?? startupPromptInspect?.workspaceValue
 
         if (!enabled || startupPromptExplicit === 'never') {
+            logger.warn(`Workspace Trust settings are insecure (enabled: ${enabled}, startupPrompt: ${startupPromptExplicit ?? 'default'})`)
             vscode.window.showWarningMessage(
                 'Watchtower: Workspace Trust settings are insecure. Please make sure you have workspace trust enabled (security.workspace.trust.enabled set to true) and set "security.workspace.trust.startupPrompt" to "always" or "once" for optimal security.\n\nYou can disable this warning in VSCode settings',
                 { modal: true },
@@ -217,13 +218,21 @@ export class Watchtower {
 
         await this.settings.setKnownExtensions(currentExtensions)
 
+        if (knownExtensions.length === 0)
+            logger.info(`Saved baseline of ${currentExtensions.length} installed extensions`)
+
         if (newExtensions.length === 0) return
 
         logger.info(`New extensions detected: ${newExtensions.join(', ')}`)
 
         for (const extensionId of newExtensions) {
             const malicious = await this.threatIntel.isExtensionMalicious(extensionId)
-            if (!malicious) continue
+            if (!malicious) {
+                logger.debug(`New extension ${extensionId} is not flagged`)
+                continue
+            }
+
+            logger.warn(`New extension ${extensionId} was flagged as malicious`)
 
             const title = `Malicious Extension "${extensionId}"`
             const detail = `The extension "${extensionId}" has been identified as malicious. It is strongly recommended to uninstall it immediately.`
@@ -231,6 +240,7 @@ export class Watchtower {
 
 
             if (this.settings.getAutoUninstallMalicious()) {
+                logger.info(`Automatically uninstalling malicious extension ${extensionId}`)
                 vscode.commands.executeCommand('workbench.extensions.uninstallExtension', extensionId)
 
                 vscode.window.showWarningMessage(
@@ -242,6 +252,7 @@ export class Watchtower {
                         vscode.commands.executeCommand('workbench.action.openSettings', 'watchtower.autoUninstallMalicious')
                 })
             } else {
+                logger.info(`Automatic uninstall is disabled, asking the user about ${extensionId}`)
                 vscode.window.showWarningMessage(`🔴 Watchtower: ${title}`, { modal: true, detail: detail }, 'Uninstall').then(action => {
                     if (action === 'Uninstall')
                         vscode.commands.executeCommand('workbench.extensions.uninstallExtension', extensionId)
@@ -268,6 +279,7 @@ export class Watchtower {
      */
     public async runScan(): Promise<Finding[]> {
         logger.info('Starting full workspace scan')
+        const scanStart = Date.now()
 
         return vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -281,13 +293,19 @@ export class Watchtower {
             const files = await vscode.workspace.findFiles('**/*', excludePattern)
             logger.info(`Found ${files.length} files to scan`)
 
-            if (token.isCancellationRequested) return findings
+            if (token.isCancellationRequested) {
+                logger.info('Scan cancelled by the user')
+                return findings
+            }
 
             const totalFiles = files.length
             const incrementPerFile = 100 / totalFiles
 
             for (let i = 0; i < totalFiles; i++) {
-                if (token.isCancellationRequested) break
+                if (token.isCancellationRequested) {
+                    logger.info(`Scan cancelled by the user after ${i}/${totalFiles} files`)
+                    break
+                }
 
                 const file = files[i]
                 const relativePath = vscode.workspace.asRelativePath(file)
@@ -305,7 +323,7 @@ export class Watchtower {
 
             this.setInlineFindings(findings)
 
-            logger.info(`Scan complete: ${findings.length} findings`)
+            logger.info(`Scan complete: ${findings.length} findings in ${Date.now() - scanStart}ms`)
             return findings
         })
     }
@@ -357,6 +375,7 @@ export class Watchtower {
         const order = [StartupScansMode.onEveryProject, StartupScansMode.onUntrusted, StartupScansMode.off]
         const next = order[(order.indexOf(current) + 1) % order.length]
         await this.settings.setGlobalStartupScans(next)
+        logger.info(`Startup scans mode set to ${next}`)
         this.settingsTree.refresh()
     }
 
@@ -365,34 +384,40 @@ export class Watchtower {
         const order = [InlineFindingType.all, InlineFindingType.invisible, InlineFindingType.none]
         const next = order[(order.indexOf(current) + 1) % order.length]
         await this.settings.setGlobalInlineFindings(next)
+        logger.info(`Inline findings set to ${next}`)
         this.settingsTree.refresh()
     }
 
     public async commandToggleWorkspaceStartupScan(): Promise<void> {
         const current = this.settings.getWorkspaceStartupScan()
         await this.settings.setWorkspaceStartupScan(!current)
+        logger.info(`Startup scan ${!current ? 'enabled' : 'disabled'} for this project`)
         this.settingsTree.refresh()
     }
 
     public async commandToggleWorkspaceRealTime(): Promise<void> {
         const current = this.settings.getWorkspaceRealTimeDetection()
         await this.settings.setWorkspaceRealTimeDetection(!current)
+        logger.info(`Real-time detection ${!current ? 'enabled' : 'disabled'} for this project`)
         this.settingsTree.refresh()
     }
 
     public async commandToggleRule(ruleId: string): Promise<void> {
         await this.settings.toggleRule(ruleId)
+        logger.info(`Rule '${ruleId}' toggled globally (now ${this.settings.getDisabledRules().includes(ruleId) ? 'disabled' : 'enabled'})`)
         this.settingsTree.refresh()
     }
 
     public async commandToggleWorkspaceRule(ruleId: string): Promise<void> {
         await this.settings.toggleWorkspaceRule(ruleId)
+        logger.info(`Rule '${ruleId}' toggled for this project (now ${this.settings.getWorkspaceDisabledRules().includes(ruleId) ? 'disabled' : 'enabled'})`)
         this.settingsTree.refresh()
     }
 
     public async commandToggleAutoUninstallMalicious(): Promise<void> {
         const current = this.settings.getAutoUninstallMalicious()
         await vscode.workspace.getConfiguration('watchtower').update('autoUninstallMalicious', !current, vscode.ConfigurationTarget.Global)
+        logger.info(`Auto uninstall of malicious extensions ${!current ? 'enabled' : 'disabled'}`)
         this.settingsTree.refresh()
     }
 
@@ -406,6 +431,7 @@ export class Watchtower {
         const current = this.settings.getWorkspaceExcludedFiles()
         if (!current.includes(relPath)) {
             await this.settings.setWorkspaceExcludedFiles([...current, relPath])
+            logger.info(`Excluded ${relPath} from scans for this project`)
         }
         this.findings = this.findings.filter(f => f.file !== relPath)
         this.updateViews()
@@ -416,6 +442,7 @@ export class Watchtower {
         const relPath = vscode.workspace.asRelativePath(uri, false)
         const current = this.settings.getWorkspaceExcludedFiles()
         await this.settings.setWorkspaceExcludedFiles(current.filter(p => p !== relPath))
+        logger.info(`Included ${relPath} in scans again for this project`)
         this.syncExcludedFilesContext()
 
         const newFindings = await this.scanFile(uri)
@@ -506,6 +533,7 @@ export class Watchtower {
         )
         if (patterns === undefined) return
         await this.settings.setWorkspaceExcludedFiles(patterns)
+        logger.info(`Excluded file patterns for this project updated (${patterns.length})`)
         this.settingsTree.refresh()
     }
 
@@ -518,6 +546,7 @@ export class Watchtower {
         )
         if (patterns === undefined) return
         await this.settings.setWorkspaceExcludedFolders(patterns)
+        logger.info(`Excluded folder patterns for this project updated (${patterns.length})`)
         this.settingsTree.refresh()
     }
 
@@ -529,7 +558,10 @@ export class Watchtower {
 
         logger.info('Running initial scan')
         const wsfolders = vscode.workspace.workspaceFolders
-        if (!wsfolders || wsfolders.length === 0) return
+        if (!wsfolders || wsfolders.length === 0) {
+            logger.info('No workspace folder open, skipping initial scan')
+            return
+        }
 
         const findings = await this.runScan()
         if (findings.length > 0)
@@ -571,6 +603,7 @@ export class Watchtower {
             async () => {
                 const isMalicious = await this.threatIntel.isExtensionMalicious(extensionId.trim())
 
+                logger.info(`Manual extension scan for ${extensionId.trim()}: ${isMalicious ? 'flagged as malicious' : 'clean'}`)
                 if (isMalicious)
                     vscode.window.showWarningMessage(`❗️ Extension "${extensionId}" has been flagged as malicious!`)
                 else
@@ -598,9 +631,17 @@ export class Watchtower {
 
         content = await ensureFileContent()
 
+        const relativePath = vscode.workspace.asRelativePath(uri)
         const analyzersForFile = this.allAnalyzers.filter(a => a.canScanFile(uri))
-        const fileChecks = analyzersForFile.map(a => a.checkFile(uri, content))
-        const backgroundChecks = fileEdited ? analyzersForFile.map(a => a.runBackgroundEditedCheck(uri)) : []
+        logger.debug(`${analyzersForFile.length} analyzer(s) for ${relativePath}: ${analyzersForFile.map(a => a.constructor.name).join(', ')}`)
+
+        // log which analyzer failed and on what file, then let the error propagate as before
+        const logFailure = (analyzer: StaticAnalyzer, stage: string) => (error: unknown): never => {
+            logger.error(`${analyzer.constructor.name} failed (${stage}) on ${relativePath}`, error)
+            throw error
+        }
+        const fileChecks = analyzersForFile.map(a => a.checkFile(uri, content).catch(logFailure(a, 'checkFile')))
+        const backgroundChecks = fileEdited ? analyzersForFile.map(a => a.runBackgroundEditedCheck(uri).catch(logFailure(a, 'background edit check'))) : []
 
         const promises = [
             ...fileChecks,
@@ -609,6 +650,9 @@ export class Watchtower {
 
         const results = await Promise.all(promises)
         const findings = results.flat()
+
+        if (findings.length > 0)
+            logger.info(`${findings.length} finding(s) in ${relativePath}: ${findings.map(f => f.name).join('; ')}`)
 
         if (this.isActiveFile(uri))
             this.setInlineFindings(findings)
@@ -644,6 +688,7 @@ export class Watchtower {
 
         for (const finding of findings) {
             const emoji = priorityEmoji[finding.priority]
+            logger.info(`Alerting user: [${finding.priority}] ${finding.name} (${finding.file})`)
             const message = `${emoji} Watchtower: ${finding.name} (${finding.file})`
 
             vscode.window.showInformationMessage(message, 'Show Finding').then(action => {

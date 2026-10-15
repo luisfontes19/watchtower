@@ -1,5 +1,6 @@
 import * as path from 'path'
 import * as vscode from 'vscode'
+import { logger } from './logger'
 import { InlineFindingType, StartupScansMode } from './types'
 
 export type DevContainerToggleSetting =
@@ -95,6 +96,7 @@ export class Settings {
     public async toggleDevContainerSetting(key: DevContainerToggleSetting): Promise<void> {
         const current = this.devContainerConfig().get<boolean>(key)
         await this.devContainerConfig().update(key, !current, vscode.ConfigurationTarget.Global)
+        logger.info(`Dev Container setting '${key}' set to ${!current}`)
     }
 
     public getDevContainerExceptions(): string[] {
@@ -111,6 +113,7 @@ export class Settings {
         if (this.isDevContainerException(projectPath)) return
         const updated = [...this.getDevContainerExceptions(), path.resolve(projectPath)]
         await this.devContainerConfig().update('exceptions', updated, vscode.ConfigurationTarget.Global)
+        logger.info(`Added Dev Container exception for ${path.resolve(projectPath)}`)
     }
 
     public getExcludedFolders(): string[] {

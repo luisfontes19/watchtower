@@ -48,6 +48,7 @@ export class DevContainerLauncher {
 
         const configs = await this.findConfigs(folder.uri)
         if (configs.length === 0) return log('skipped: no devcontainer config found')
+        logger.debug(`Dev Container: found ${configs.length} config(s): ${configs.map(c => vscode.workspace.asRelativePath(c, false)).join(', ')}`)
 
         if (!vscode.extensions.getExtension(DEV_CONTAINERS_EXTENSION_ID))
             return log(`skipped: extension '${DEV_CONTAINERS_EXTENSION_ID}' is not installed`)
@@ -97,16 +98,21 @@ export class DevContainerLauncher {
             issues.push(...await analyzeDevContainerConfig(text, config.fsPath, workspaceDir, readFile))
         }
 
-        return blockingIssues(issues, {
+        const blocking = blockingIssues(issues, {
             onlyIfNoInitCommands: this.settings.getDevContainerOnlyIfNoInitCommands(),
             onlyIfNoMounts: this.settings.getDevContainerOnlyIfNoMounts(),
         })
+        for (const issue of issues)
+            logger.debug(`Dev Container: detected [${issue.kind}] ${issue.message}${blocking.includes(issue) ? '' : ' (ignored by settings)'}`)
+        log(`security checks found ${issues.length} issue(s), ${blocking.length} blocking`)
+        return blocking
     }
 
     private async promptBlocked(projectPath: string, reasons: string[]): Promise<void> {
         const message = `Watchtower did not open this project in its Dev Container automatically:\n${reasons.map(r => `• ${r}`).join('\n')}`
         const choice = await vscode.window.showWarningMessage(message, ALWAYS_OPEN, OPEN_ONCE)
 
+        log(`user chose: ${choice ?? 'dismissed'}`)
         if (choice === ALWAYS_OPEN) {
             await this.settings.addDevContainerException(projectPath)
             await this.open()

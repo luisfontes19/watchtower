@@ -4,7 +4,7 @@
 
 - Fix alert when workspace trust in undefined
 - Remove some files from background scan
-- Comment out changelot tab opening on new updates
+- Comment out changelog tab opening on new updates
 
 ## [0.5.1]
 

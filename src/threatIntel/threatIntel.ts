@@ -27,7 +27,9 @@ export class ThreatIntel {
 
             const results: AikidoMalwareResult[] = await response.json() as AikidoMalwareResult[]
 
-            return results.some(r => r.status === "MALWARE")
+            const malicious = results.some(r => r.status === "MALWARE")
+            logger.debug(`Threat intel check for ${extensionId}: ${malicious ? 'flagged as malware' : 'clean'}`)
+            return malicious
         } catch (error) {
             logger.error(`Failed to check threat intel for ${extensionId}:`, error)
             return false
