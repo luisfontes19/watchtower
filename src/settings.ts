@@ -2,6 +2,13 @@ import * as path from 'path'
 import * as vscode from 'vscode'
 import { InlineFindingType, StartupScansMode } from './types'
 
+export type DevContainerToggleSetting =
+    | 'openByDefault'
+    | 'onlyIfNoInitCommands'
+    | 'onlyIfNoMounts'
+    | 'openInUntrustedWorkspaces'
+    | 'securityChecksOnlyWhenUntrusted'
+
 export class Settings {
     private static instance: Settings
     private workspaceStorage: vscode.Memento
@@ -83,6 +90,11 @@ export class Settings {
 
     public getDevContainerSecurityChecksOnlyWhenUntrusted(): boolean {
         return this.devContainerConfig().get<boolean>('securityChecksOnlyWhenUntrusted', false)
+    }
+
+    public async toggleDevContainerSetting(key: DevContainerToggleSetting): Promise<void> {
+        const current = this.devContainerConfig().get<boolean>(key)
+        await this.devContainerConfig().update(key, !current, vscode.ConfigurationTarget.Global)
     }
 
     public getDevContainerExceptions(): string[] {

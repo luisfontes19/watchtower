@@ -278,6 +278,10 @@
         "title": "Watchtower: Toggle Auto Uninstall Malicious"
       },
       {
+        "command": "watchtower.toggleDevContainerSetting",
+        "title": "Watchtower: Toggle Dev Container Setting"
+      },
+      {
         "command": "watchtower.excludeFile",
         "title": "Watchtower: Exclude file from scan"
       },
@@ -322,6 +326,10 @@
         },
         {
           "command": "watchtower.toggleAutoUninstallMalicious",
+          "when": "false"
+        },
+        {
+          "command": "watchtower.toggleDevContainerSetting",
           "when": "false"
         },
         {

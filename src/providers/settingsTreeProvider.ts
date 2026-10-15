@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import { RuleRegistry } from '../rules'
-import { Settings } from '../settings'
+import { DevContainerToggleSetting, Settings } from '../settings'
 import { InlineFindingType, StartupScansMode } from '../types'
 
 class SettingsItem extends vscode.TreeItem {
@@ -35,6 +35,14 @@ class GlobalSettingsGroupItem extends vscode.TreeItem {
     }
 }
 
+class DevContainerGroupItem extends vscode.TreeItem {
+    constructor() {
+        super('Dev Container', vscode.TreeItemCollapsibleState.Collapsed)
+        this.tooltip = 'Control automatic opening of projects in their Dev Container'
+        this.iconPath = new vscode.ThemeIcon('remote')
+    }
+}
+
 class ProjectSettingsGroupItem extends vscode.TreeItem {
     constructor() {
         super('Project Settings', vscode.TreeItemCollapsibleState.Collapsed)
@@ -59,6 +67,7 @@ export class SettingsTreeProvider implements vscode.TreeDataProvider<vscode.Tree
     private globalRulesGroup = new RulesGroupItem('Rules', 'Toggle individual security rules on or off')
     private projectRulesGroup = new RulesGroupItem('Rules', 'Toggle individual security rules on or off for this project')
     private globalSettingsGroup = new GlobalSettingsGroupItem()
+    private devContainerGroup = new DevContainerGroupItem()
     private projectSettingsGroup = new ProjectSettingsGroupItem()
 
     getChildren(element?: vscode.TreeItem): vscode.TreeItem[] {
@@ -140,7 +149,38 @@ export class SettingsTreeProvider implements vscode.TreeDataProvider<vscode.Tree
                     new vscode.ThemeIcon('rocket', startupScansColor(startupScans)),
                     { command: 'watchtower.cycleStartupScans', title: 'Cycle Startup Scans' },
                 ),
+                this.devContainerGroup,
                 this.globalRulesGroup,
+            ]
+        }
+
+        if (element === this.devContainerGroup) {
+            const toggle = (label: string, key: DevContainerToggleSetting, enabled: boolean, tooltip: string, icon: string) => new SettingsItem(
+                label,
+                enabledLabel(enabled),
+                `${tooltip}\nClick to ${enabled ? 'disable' : 'enable'}`,
+                enabledIcon(icon, enabled),
+                { command: 'watchtower.toggleDevContainerSetting', title: 'Toggle Dev Container Setting', arguments: [key] },
+            )
+
+            return [
+                toggle('Open by Default', 'openByDefault', settings.getDevContainerOpenByDefault(),
+                    'Automatically reopen projects in their Dev Container on startup', 'remote'),
+                toggle('Only If No Init Commands', 'onlyIfNoInitCommands', settings.getDevContainerOnlyIfNoInitCommands(),
+                    "Don't open if the config runs commands on the host (initializeCommand) or elevates privileges (runArgs, compose options)", 'terminal'),
+                toggle('Only If No Mounts', 'onlyIfNoMounts', settings.getDevContainerOnlyIfNoMounts(),
+                    "Don't open if the config bind mounts host paths", 'file-symlink-directory'),
+                toggle('Open In Untrusted Workspaces', 'openInUntrustedWorkspaces', settings.getDevContainerOpenInUntrustedWorkspaces(),
+                    'Allow opening automatically when the workspace is not trusted', 'workspace-untrusted'),
+                toggle('Checks Only When Untrusted', 'securityChecksOnlyWhenUntrusted', settings.getDevContainerSecurityChecksOnlyWhenUntrusted(),
+                    'Only apply the security checks to untrusted workspaces', 'shield'),
+                new SettingsItem(
+                    'Exceptions',
+                    excludedPatternsLabel(settings.getDevContainerExceptions()),
+                    'Projects that always open automatically. Click to open the setting',
+                    new vscode.ThemeIcon('list-unordered'),
+                    { command: 'workbench.action.openSettings', title: 'Open Setting', arguments: ['watchtower.devContainer.exceptions'] },
+                ),
             ]
         }
 

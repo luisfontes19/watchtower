@@ -1,12 +1,37 @@
+import { execFile } from 'child_process'
 import * as vscode from 'vscode'
 import { analyzeDevContainerConfig, blockingIssues, DevContainerIssue } from './devContainerSecurity'
 import { Settings } from './settings'
+import { logger } from './logger'
 
 const DEV_CONTAINERS_EXTENSION_ID = 'ms-vscode-remote.remote-containers'
 const REOPEN_COMMAND = 'remote-containers.reopenInContainer'
 
 const ALWAYS_OPEN = 'Always open this project'
 const OPEN_ONCE = 'Open once'
+const RETRY = 'Retry'
+const DOCKER_CHECK_TIMEOUT_MS = 10_000
+
+function log(message: string): void {
+    logger.info(`Dev Container: ${message}`)
+}
+
+/** Honors the Dev Containers extension's docker path setting (also used for podman), falling back to `docker` */
+function containerEnginePath(): string {
+    const config = vscode.workspace.getConfiguration()
+    return config.get<string>('dev.containers.dockerPath') || config.get<string>('remote.containers.dockerPath') || 'docker'
+}
+
+/** True if the container engine's daemon answers; `docker version` fails when it can't be reached */
+function isContainerEngineRunning(): Promise<boolean> {
+    const engine = containerEnginePath()
+    return new Promise(resolve => {
+        execFile(engine, ['version', '--format', '{{.Server.Version}}'], { timeout: DOCKER_CHECK_TIMEOUT_MS }, error => {
+            if (error) log(`'${engine} version' failed: ${error.message}`)
+            resolve(!error)
+        })
+    })
+}
 
 export class DevContainerLauncher {
 
@@ -14,18 +39,21 @@ export class DevContainerLauncher {
 
     /** Opens the workspace in its Dev Container when the user's settings allow it */
     public async run(): Promise<void> {
-        if (!this.settings.getDevContainerOpenByDefault()) return
-        if (vscode.env.remoteName) return // already in a container/remote, avoids reopen loops
+        if (!this.settings.getDevContainerOpenByDefault()) return log('skipped: openByDefault is off')
+        if (vscode.env.remoteName) return log(`skipped: already in a remote window (${vscode.env.remoteName})`) // avoids reopen loops
 
         const folder = vscode.workspace.workspaceFolders?.[0]
-        if (!folder || folder.uri.scheme !== 'file') return
+        if (!folder) return log('skipped: no workspace folder open')
+        if (folder.uri.scheme !== 'file') return log(`skipped: workspace folder scheme is '${folder.uri.scheme}'`)
 
         const configs = await this.findConfigs(folder.uri)
-        if (configs.length === 0) return
+        if (configs.length === 0) return log('skipped: no devcontainer config found')
 
-        if (!vscode.extensions.getExtension(DEV_CONTAINERS_EXTENSION_ID)) return
+        if (!vscode.extensions.getExtension(DEV_CONTAINERS_EXTENSION_ID))
+            return log(`skipped: extension '${DEV_CONTAINERS_EXTENSION_ID}' is not installed`)
 
         if (this.settings.isDevContainerException(folder.uri.fsPath)) {
+            log('project is in the exceptions list, opening')
             await this.open()
             return
         }
@@ -41,10 +69,12 @@ export class DevContainerLauncher {
             reasons.push(...(await this.securityIssues(configs, folder.uri.fsPath)).map(i => i.message))
 
         if (reasons.length === 0) {
+            log('checks passed, opening')
             await this.open()
             return
         }
 
+        log(`blocked: ${reasons.join('; ')}`)
         await this.promptBlocked(folder.uri.fsPath, reasons)
     }
 
@@ -86,7 +116,21 @@ export class DevContainerLauncher {
     }
 
     private async open(): Promise<void> {
-        await vscode.commands.executeCommand(REOPEN_COMMAND)
+        if (!(await isContainerEngineRunning())) {
+            const choice = await vscode.window.showWarningMessage(
+                "Watchtower did not open this project in its Dev Container automatically: Docker doesn't seem to be running (or isn't responding). Start Docker and try again.",
+                RETRY,
+            )
+            if (choice === RETRY) await this.open()
+            return
+        }
+
+        try {
+            await vscode.commands.executeCommand(REOPEN_COMMAND)
+        } catch (error) {
+            log(`'${REOPEN_COMMAND}' failed: ${error}`)
+            vscode.window.showErrorMessage(`Watchtower could not open the project in its Dev Container: ${error instanceof Error ? error.message : error}`)
+        }
     }
 
     /** .devcontainer/devcontainer.json, .devcontainer.json and .devcontainer/<folder>/devcontainer.json */
