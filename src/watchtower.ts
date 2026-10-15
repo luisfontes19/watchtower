@@ -18,10 +18,11 @@ import { DevContainerLauncher } from './devContainerLauncher'
 import { FindingsOverviewProvider } from './providers/findingsOverviewProvider'
 import { FindingsTreeProvider } from './providers/findingsTreeProvider'
 import { SettingsTreeProvider } from './providers/settingsTreeProvider'
-import { Settings } from './settings'
+import { DevContainerToggleSetting, Settings } from './settings'
 import { ThreatIntel } from './threatIntel/threatIntel'
 import { Finding, FindingType, InlineFindingType, StartupScansMode } from './types'
 import { fileMatchesPatterns } from './utils'
+import { logger } from './logger'
 
 
 export class Watchtower {
@@ -121,7 +122,7 @@ export class Watchtower {
         try {
             await new DevContainerLauncher(this.settings).run()
         } catch (error) {
-            console.error('[Watchtower] Failed to auto open in Dev Container', error)
+            logger.error('Failed to auto open in Dev Container', error)
         }
     }
 
@@ -147,7 +148,7 @@ export class Watchtower {
     }
 
     public async onFileCreated(uri: vscode.Uri) {
-        console.log(`[Watchtower] File created: ${vscode.workspace.asRelativePath(uri)}`)
+        logger.debug(`File created: ${vscode.workspace.asRelativePath(uri)}`)
 
         if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
 
@@ -161,7 +162,7 @@ export class Watchtower {
     }
 
     public async onFileOpened(e: vscode.TextDocument) {
-        console.log(`[Watchtower] File opened: ${vscode.workspace.asRelativePath(e.uri)}`)
+        logger.debug(`File opened: ${vscode.workspace.asRelativePath(e.uri)}`)
 
         if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
 
@@ -169,7 +170,7 @@ export class Watchtower {
     }
 
     public async onFileChanged(uri: vscode.Uri) {
-        console.log(`[Watchtower] File changed: ${vscode.workspace.asRelativePath(uri)}`)
+        logger.debug(`File changed: ${vscode.workspace.asRelativePath(uri)}`)
 
         if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
 
@@ -194,7 +195,7 @@ export class Watchtower {
     public async onActiveEditorChanged(editor: vscode.TextEditor | undefined) {
         if (!editor) return
 
-        console.log(`[Watchtower] Active editor changed: ${vscode.workspace.asRelativePath(editor.document.uri)}`)
+        logger.debug(`Active editor changed: ${vscode.workspace.asRelativePath(editor.document.uri)}`)
 
         if (!this.settings.shouldRunRealtimeScanForWorkspace()) return
 
@@ -203,7 +204,7 @@ export class Watchtower {
     }
 
     public async onExtensionsChanged() {
-        console.log('[Watchtower] Extensions changed, checking for new extensions and potential threats')
+        logger.info('Extensions changed, checking for new extensions and potential threats')
         const currentExtensions = vscode.extensions.all
             .filter(ext => !(ext.packageJSON as { isBuiltin?: boolean })?.isBuiltin)
             .map(ext => ext.id)
@@ -218,7 +219,7 @@ export class Watchtower {
 
         if (newExtensions.length === 0) return
 
-        console.log(`[Watchtower] New extensions detected: ${newExtensions.join(', ')}`)
+        logger.info(`New extensions detected: ${newExtensions.join(', ')}`)
 
         for (const extensionId of newExtensions) {
             const malicious = await this.threatIntel.isExtensionMalicious(extensionId)
@@ -266,7 +267,7 @@ export class Watchtower {
      * Run a full workspace scan and return findings
      */
     public async runScan(): Promise<Finding[]> {
-        console.log('[Watchtower] Starting full workspace scan')
+        logger.info('Starting full workspace scan')
 
         return vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -278,7 +279,7 @@ export class Watchtower {
             progress.report({ increment: 0, message: 'Listing project files...' })
             const excludePattern = `{${this.settings.getAllExcludedFolders().join(',')}}`
             const files = await vscode.workspace.findFiles('**/*', excludePattern)
-            console.log(`[Watchtower] Found ${files.length} files to scan`)
+            logger.info(`Found ${files.length} files to scan`)
 
             if (token.isCancellationRequested) return findings
 
@@ -304,7 +305,7 @@ export class Watchtower {
 
             this.setInlineFindings(findings)
 
-            console.log(`[Watchtower] Scan complete: ${findings.length} findings`)
+            logger.info(`Scan complete: ${findings.length} findings`)
             return findings
         })
     }
@@ -392,6 +393,11 @@ export class Watchtower {
     public async commandToggleAutoUninstallMalicious(): Promise<void> {
         const current = this.settings.getAutoUninstallMalicious()
         await vscode.workspace.getConfiguration('watchtower').update('autoUninstallMalicious', !current, vscode.ConfigurationTarget.Global)
+        this.settingsTree.refresh()
+    }
+
+    public async commandToggleDevContainerSetting(key: DevContainerToggleSetting): Promise<void> {
+        await this.settings.toggleDevContainerSetting(key)
         this.settingsTree.refresh()
     }
 
@@ -517,11 +523,11 @@ export class Watchtower {
 
     public async runInitialScan(): Promise<void> {
         if (!this.settings.shouldRunStartupScanForWorkspace()) {
-            console.log('[Watchtower] Startup scan disabled for this workspace, skipping')
+            logger.info('Startup scan disabled for this workspace, skipping')
             return
         }
 
-        console.log('[Watchtower] Running initial scan')
+        logger.info('Running initial scan')
         const wsfolders = vscode.workspace.workspaceFolders
         if (!wsfolders || wsfolders.length === 0) return
 
@@ -532,7 +538,7 @@ export class Watchtower {
     }
 
     public async commandRunScan(): Promise<void> {
-        console.log('[Watchtower] Manual scan triggered')
+        logger.info('Manual scan triggered')
         const findings = await this.runScan()
 
         if (findings.length === 0)
@@ -576,10 +582,10 @@ export class Watchtower {
 
     public async scanFile(uri: vscode.Uri, content?: Uint8Array<ArrayBufferLike>, fileEdited: boolean = false): Promise<Finding[]> {
 
-        console.log(`Scanning file: ${uri.fsPath}`)
+        logger.debug(`Scanning file: ${uri.fsPath}`)
 
         if (this.isFileExcluded(uri)) {
-            console.log(`[Watchtower] File excluded: ${vscode.workspace.asRelativePath(uri)}`)
+            logger.debug(`File excluded: ${vscode.workspace.asRelativePath(uri)}`)
             return []
         }
 

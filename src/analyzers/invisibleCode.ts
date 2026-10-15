@@ -5,6 +5,7 @@ import * as vscode from 'vscode'
 import { rule } from '../rules'
 import { Finding, FindingType } from '../types'
 import { StaticAnalyzer } from './staticAnalyzer'
+import { logger } from '../logger'
 
 //https://github.com/nickboucher/trojan-source/
 
@@ -23,7 +24,7 @@ export class InvisibleCodeAnalyzer extends StaticAnalyzer {
 
         const { isBinaryFile } = await import('isbinaryfile')
         if (await isBinaryFile(Buffer.from(data))) {
-            console.log(`Skipping binary file: ${uri.fsPath}`)
+            logger.debug(`Skipping binary file: ${uri.fsPath}`)
             return []
         }
 

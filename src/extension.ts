@@ -3,13 +3,16 @@ import { FindingsOverviewProvider } from './providers/findingsOverviewProvider'
 import { FindingsTreeProvider } from './providers/findingsTreeProvider'
 import { SettingsTreeProvider } from './providers/settingsTreeProvider'
 import { exportToJSON, showHTMLReport } from './report'
-import { Settings } from './settings'
+import { DevContainerToggleSetting, Settings } from './settings'
 import { Watchtower } from './watchtower'
+import { logger } from './logger'
 
 
 
 export function activate(context: vscode.ExtensionContext) {
-	console.log("Watchtower Extension Loading")
+	logger.info("Watchtower Extension Loading")
+
+	context.subscriptions.push({ dispose: () => logger.dispose() })
 
 	const settings = Settings.getInstance(context)
 
@@ -50,12 +53,13 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('watchtower.editWorkspaceExcludedFiles', watchtower.commandEditWorkspaceExcludedFiles.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.editWorkspaceExcludedFolders', watchtower.commandEditWorkspaceExcludedFolders.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.toggleAutoUninstallMalicious', watchtower.commandToggleAutoUninstallMalicious.bind(watchtower)),
+		vscode.commands.registerCommand('watchtower.toggleDevContainerSetting', (key: DevContainerToggleSetting) => watchtower.commandToggleDevContainerSetting(key)),
 		vscode.commands.registerCommand('watchtower.excludeFile', (uri: vscode.Uri) => watchtower.commandExcludeFile(uri)),
 		vscode.commands.registerCommand('watchtower.includeFile', (uri: vscode.Uri) => watchtower.commandIncludeFile(uri)),
 	]
 
 	commands.forEach(command => context.subscriptions.push(command))
-	console.log(vscode.workspace.getConfiguration('security.workspace.trust'))
+	logger.debug(`security.workspace.trust enabled: ${vscode.workspace.getConfiguration('security.workspace.trust').get('enabled')}`)
 
 	/////////////////////////////
 	// Real-time listeners
@@ -86,12 +90,17 @@ export function activate(context: vscode.ExtensionContext) {
 	listeners.forEach(listener => context.subscriptions.push(listener))
 
 
+	// Keep the settings panel in sync when settings are edited elsewhere (settings UI, settings.json, toast actions)
+	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
+		if (e.affectsConfiguration('watchtower')) settingsTree.refresh()
+	}))
+
 	// WORKSPACE TRUST LISTENER
 	context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(() => {
-		console.log("Workspace trust granted")
+		logger.info("Workspace trust granted")
 		settingsTree.refresh()
 		if (!settings.shouldRunRealtimeScanForWorkspace()) {
-			console.log("Disposing real time listeners due to workspace trust change")
+			logger.info("Disposing real time listeners due to workspace trust change")
 			realTimeListeners.forEach(listener => listener.dispose())
 		}
 	}))

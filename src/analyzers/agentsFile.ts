@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { Finding } from '../types'
 import { fileMatchesPatterns } from '../utils'
 import { StaticAnalyzer } from './staticAnalyzer'
+import { logger } from '../logger'
 
 export class AgentsAnalyzer extends StaticAnalyzer {
     static AGENTS_FILE_NAMES = AgentsAnalyzer.generateAgentFilesList()
@@ -79,7 +80,7 @@ export class AgentsAnalyzer extends StaticAnalyzer {
             .filter(([file, enabled]) => enabled && !file.startsWith("~"))
             .map(([p]) => agentRelatedFiles.push(path.join(p, "**/SKILL.md")))
 
-        console.log(agentRelatedFiles)
+        logger.debug(`Agent related files: ${JSON.stringify(agentRelatedFiles)}`)
 
         return agentRelatedFiles
     }

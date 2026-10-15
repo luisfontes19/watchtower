@@ -1,3 +1,5 @@
+import { logger } from '../logger'
+
 interface AikidoMalwareResult {
     id: number
     ecosystem: string
@@ -19,7 +21,7 @@ export class ThreatIntel {
             const response = await fetch(url)
 
             if (!response.ok) {
-                console.warn(`[Watchtower] Aikido API returned ${response.status} for ${extensionId}`)
+                logger.warn(`Aikido API returned ${response.status} for ${extensionId}`)
                 return false
             }
 
@@ -27,7 +29,7 @@ export class ThreatIntel {
 
             return results.some(r => r.status === "MALWARE")
         } catch (error) {
-            console.error(`[Watchtower] Failed to check threat intel for ${extensionId}:`, error)
+            logger.error(`Failed to check threat intel for ${extensionId}:`, error)
             return false
         }
     }
