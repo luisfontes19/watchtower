@@ -148,6 +148,45 @@
           },
           "default": [],
           "description": "List of rule IDs to disable. All rules are enabled by default. View available rules in the Watchtower settings panel."
+        },
+        "watchtower.devContainer.openByDefault": {
+          "type": "boolean",
+          "scope": "application",
+          "default": false,
+          "markdownDescription": "Automatically reopen projects that have a devcontainer configuration in their Dev Container on startup. Requires the Dev Containers extension (`ms-vscode-remote.remote-containers`). When a project is not opened because of the security settings below, Watchtower tells you why and lets you add an exception."
+        },
+        "watchtower.devContainer.onlyIfNoInitCommands": {
+          "type": "boolean",
+          "scope": "application",
+          "default": true,
+          "markdownDescription": "Only open automatically if the devcontainer configuration has nothing that executes on, or elevates privileges against, the host. Checked:\n\n- `initializeCommand`: runs on your machine before the container is created.\n- `runArgs`: raw `docker run` arguments. Flags such as `--privileged`, `--cap-add`, `--device`, `--security-opt` and host namespaces (`--pid=host`, `--network=host`, `--ipc=host`, `--userns=host`, `--uts=host`) block the open.\n- Compose files referenced by `dockerComposeFile`: the equivalent options (`privileged`, `cap_add`, `devices`, `security_opt`, `pid`/`ipc`/`network_mode`/`userns_mode`/`uts: host`).\n\nMounts passed through `runArgs` (`-v`, `--volume`, `--mount`) are covered by `#watchtower.devContainer.onlyIfNoMounts#`."
+        },
+        "watchtower.devContainer.onlyIfNoMounts": {
+          "type": "boolean",
+          "scope": "application",
+          "default": true,
+          "markdownDescription": "Only open automatically if no host bind mounts are detected in `mounts`, `workspaceMount`, `runArgs` or the compose files referenced by `dockerComposeFile`. Binds of the project folder itself (`${localWorkspaceFolder}` or a subfolder) and named volumes are allowed.\n\nBinding the container engine socket (for example `/var/run/docker.sock`, or the `docker-outside-of-docker` feature) is always treated as unsafe whenever security checks run, regardless of this setting."
+        },
+        "watchtower.devContainer.openInUntrustedWorkspaces": {
+          "type": "boolean",
+          "scope": "application",
+          "default": false,
+          "description": "Allow opening in the Dev Container automatically when the workspace is not trusted (Restricted Mode)."
+        },
+        "watchtower.devContainer.securityChecksOnlyWhenUntrusted": {
+          "type": "boolean",
+          "scope": "application",
+          "default": false,
+          "markdownDescription": "Only apply the security checks (`onlyIfNoInitCommands`, `onlyIfNoMounts` and the container engine socket check) to untrusted workspaces. Trusted workspaces open without checks. This has no effect while `#watchtower.devContainer.openInUntrustedWorkspaces#` is off, because untrusted workspaces are then never opened automatically."
+        },
+        "watchtower.devContainer.exceptions": {
+          "type": "array",
+          "scope": "application",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Absolute paths of projects that always open automatically in the Dev Container, skipping the trust and security checks. Entries are added when you choose **Always open this project** on the Watchtower notification. Still requires `#watchtower.devContainer.openByDefault#`."
         }
       }
     },
@@ -355,6 +394,7 @@
   "dependencies": {
     "isbinaryfile": "^6.0.0",
     "jsonc-parser": "^3.3.1",
-    "minimatch": "^10.2.4"
+    "minimatch": "^10.2.4",
+    "yaml": "^2.9.1"
   }
 }

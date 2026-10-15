@@ -1,3 +1,4 @@
+import * as path from 'path'
 import * as vscode from 'vscode'
 import { InlineFindingType, StartupScansMode } from './types'
 
@@ -58,6 +59,46 @@ export class Settings {
         return vscode.workspace
             .getConfiguration('watchtower')
             .get<boolean>('checkWorkspaceTrust', true)
+    }
+
+    private devContainerConfig(): vscode.WorkspaceConfiguration {
+        return vscode.workspace.getConfiguration('watchtower.devContainer')
+    }
+
+    public getDevContainerOpenByDefault(): boolean {
+        return this.devContainerConfig().get<boolean>('openByDefault', false)
+    }
+
+    public getDevContainerOnlyIfNoInitCommands(): boolean {
+        return this.devContainerConfig().get<boolean>('onlyIfNoInitCommands', true)
+    }
+
+    public getDevContainerOnlyIfNoMounts(): boolean {
+        return this.devContainerConfig().get<boolean>('onlyIfNoMounts', true)
+    }
+
+    public getDevContainerOpenInUntrustedWorkspaces(): boolean {
+        return this.devContainerConfig().get<boolean>('openInUntrustedWorkspaces', false)
+    }
+
+    public getDevContainerSecurityChecksOnlyWhenUntrusted(): boolean {
+        return this.devContainerConfig().get<boolean>('securityChecksOnlyWhenUntrusted', false)
+    }
+
+    public getDevContainerExceptions(): string[] {
+        return this.devContainerConfig().get<string[]>('exceptions', [])
+    }
+
+    public isDevContainerException(projectPath: string): boolean {
+        const normalize = (p: string) => path.resolve(p)
+        const target = normalize(projectPath)
+        return this.getDevContainerExceptions().some(p => normalize(p) === target)
+    }
+
+    public async addDevContainerException(projectPath: string): Promise<void> {
+        if (this.isDevContainerException(projectPath)) return
+        const updated = [...this.getDevContainerExceptions(), path.resolve(projectPath)]
+        await this.devContainerConfig().update('exceptions', updated, vscode.ConfigurationTarget.Global)
     }
 
     public getExcludedFolders(): string[] {

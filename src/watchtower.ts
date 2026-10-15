@@ -14,6 +14,7 @@ import { PthFileAnalyzer } from './analyzers/pthFile'
 import { SettingsAnalyzer } from './analyzers/settingsFile'
 import { StaticAnalyzer } from './analyzers/staticAnalyzer'
 import { TaskAnalyzer } from './analyzers/taskFile'
+import { DevContainerLauncher } from './devContainerLauncher'
 import { FindingsOverviewProvider } from './providers/findingsOverviewProvider'
 import { FindingsTreeProvider } from './providers/findingsTreeProvider'
 import { SettingsTreeProvider } from './providers/settingsTreeProvider'
@@ -113,6 +114,14 @@ export class Watchtower {
         this.settingsTreeView.badge = {
             value: this.findings.length,
             tooltip: `${this.findings.length} finding${this.findings.length !== 1 ? 's' : ''}`
+        }
+    }
+
+    public async autoOpenInDevContainer(): Promise<void> {
+        try {
+            await new DevContainerLauncher(this.settings).run()
+        } catch (error) {
+            console.error('[Watchtower] Failed to auto open in Dev Container', error)
         }
     }
 

@@ -80,6 +80,9 @@ No. Scans run asynchronously, skip binary files and common dependency folders (`
 **Can I use it on every project, not just untrusted ones?**
 Yes. By default Watchtower scans every project on startup and in real time. You can restrict it to untrusted workspaces only, or disable automatic scans, via `watchtower.startupScans`.
 
+**Can Watchtower open projects in their Dev Container automatically?**
+Yes, opt in with `watchtower.devContainer.openByDefault` (requires the Dev Containers extension). Before opening, Watchtower checks the devcontainer config (and any referenced compose files) for host commands (`initializeCommand`), elevated `runArgs`, host bind mounts and container engine socket access, and skips the open if it finds any. It then tells you why and lets you add the project as an exception. See the `watchtower.devContainer.*` settings to tune the checks.
+
 **I found a false positive / a threat it missed. What do I do?**
 Open an issue on [GitHub](https://github.com/luisfontes19/watchtower/issues) - detection rules are actively maintained and community reports drive new rules.
 

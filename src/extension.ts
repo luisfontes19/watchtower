@@ -99,6 +99,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	watchtower.initExcludedFilesContext()
 	watchtower.checkWorkspaceTrustSettings()
+	watchtower.autoOpenInDevContainer()
 	// watchtower.showWhatsNewIfUpdated(context)
 	watchtower.runInitialScan()
 
