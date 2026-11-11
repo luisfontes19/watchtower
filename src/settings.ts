@@ -93,6 +93,31 @@ export class Settings {
         return this.devContainerConfig().get<boolean>('securityChecksOnlyWhenUntrusted', false)
     }
 
+    public getDevContainerRetryCooldownMinutes(): number {
+        return this.devContainerConfig().get<number>('retryCooldownMinutes', 10)
+    }
+
+    private devContainerAttempts(): Record<string, number> {
+        return this.globalStorage.get<Record<string, number>>('devContainerAttempts', {})
+    }
+
+    /** Minutes left before the project may be auto-opened again, or 0 if it can be opened now */
+    public devContainerCooldownRemainingMinutes(projectPath: string): number {
+        const cooldownMs = this.getDevContainerRetryCooldownMinutes() * 60_000
+        const lastAttempt = this.devContainerAttempts()[path.resolve(projectPath)]
+        if (cooldownMs <= 0 || lastAttempt === undefined) return 0
+        return Math.max(0, (lastAttempt + cooldownMs - Date.now()) / 60_000)
+    }
+
+    public async recordDevContainerAttempt(projectPath: string): Promise<void> {
+        const now = Date.now()
+        const cooldownMs = this.getDevContainerRetryCooldownMinutes() * 60_000
+        // drop expired entries so the map doesn't grow forever
+        const attempts = Object.fromEntries(Object.entries(this.devContainerAttempts()).filter(([, time]) => time + cooldownMs > now))
+        attempts[path.resolve(projectPath)] = now
+        await this.globalStorage.update('devContainerAttempts', attempts)
+    }
+
     public async toggleDevContainerSetting(key: DevContainerToggleSetting): Promise<void> {
         const current = this.devContainerConfig().get<boolean>(key)
         await this.devContainerConfig().update(key, !current, vscode.ConfigurationTarget.Global)
@@ -114,6 +139,23 @@ export class Settings {
         const updated = [...this.getDevContainerExceptions(), path.resolve(projectPath)]
         await this.devContainerConfig().update('exceptions', updated, vscode.ConfigurationTarget.Global)
         logger.info(`Added Dev Container exception for ${path.resolve(projectPath)}`)
+    }
+
+    public getDevContainerDisabledProjects(): string[] {
+        return this.devContainerConfig().get<string[]>('disabledProjects', [])
+    }
+
+    public isDevContainerDisabled(projectPath: string): boolean {
+        const target = path.resolve(projectPath)
+        return this.getDevContainerDisabledProjects().some(p => path.resolve(p) === target)
+    }
+
+    /** Stops (or resumes) automatically opening the project in its Dev Container */
+    public async setDevContainerDisabled(projectPath: string, disabled: boolean): Promise<void> {
+        const target = path.resolve(projectPath)
+        const others = this.getDevContainerDisabledProjects().filter(p => path.resolve(p) !== target)
+        await this.devContainerConfig().update('disabledProjects', disabled ? [...others, target] : others, vscode.ConfigurationTarget.Global)
+        logger.info(`Dev Container auto-open ${disabled ? 'disabled' : 'enabled'} for ${target}`)
     }
 
     public getExcludedFolders(): string[] {

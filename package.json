@@ -187,6 +187,22 @@
           },
           "default": [],
           "markdownDescription": "Absolute paths of projects that always open automatically in the Dev Container, skipping the trust and security checks. Entries are added when you choose **Always open this project** on the Watchtower notification. Still requires `#watchtower.devContainer.openByDefault#`."
+        },
+        "watchtower.devContainer.disabledProjects": {
+          "type": "array",
+          "scope": "application",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Absolute paths of projects that Watchtower never opens automatically in the Dev Container, regardless of the other settings. Entries are added and removed with the **Auto-open this project** item in the Watchtower panel. Takes precedence over `#watchtower.devContainer.exceptions#`."
+        },
+        "watchtower.devContainer.retryCooldownMinutes": {
+          "type": "number",
+          "scope": "application",
+          "default": 10,
+          "minimum": 0,
+          "markdownDescription": "Minutes to wait before automatically reopening a project in its Dev Container after a previous attempt. Prevents a loop when the container fails to build and VS Code falls back to the local window. Within this period nothing is opened and nothing is shown. Set to `0` to disable."
         }
       }
     },
@@ -282,6 +298,14 @@
         "title": "Watchtower: Toggle Dev Container Setting"
       },
       {
+        "command": "watchtower.openInDevContainer",
+        "title": "Watchtower: Open in Dev Container"
+      },
+      {
+        "command": "watchtower.toggleDevContainerAutoOpenForProject",
+        "title": "Watchtower: Toggle Dev Container Auto-open for this Project"
+      },
+      {
         "command": "watchtower.excludeFile",
         "title": "Watchtower: Exclude file from scan"
       },
@@ -330,6 +354,10 @@
         },
         {
           "command": "watchtower.toggleDevContainerSetting",
+          "when": "false"
+        },
+        {
+          "command": "watchtower.toggleDevContainerAutoOpenForProject",
           "when": "false"
         },
         {

@@ -120,7 +120,7 @@ export class Watchtower {
 
     public async autoOpenInDevContainer(): Promise<void> {
         try {
-            await new DevContainerLauncher(this.settings).run()
+            await new DevContainerLauncher(this.settings, () => this.settingsTree.refresh()).run()
         } catch (error) {
             logger.error('Failed to auto open in Dev Container', error)
         }
@@ -418,6 +418,21 @@ export class Watchtower {
         const current = this.settings.getAutoUninstallMalicious()
         await vscode.workspace.getConfiguration('watchtower').update('autoUninstallMalicious', !current, vscode.ConfigurationTarget.Global)
         logger.info(`Auto uninstall of malicious extensions ${!current ? 'enabled' : 'disabled'}`)
+        this.settingsTree.refresh()
+    }
+
+    public async commandOpenInDevContainer(): Promise<void> {
+        try {
+            await new DevContainerLauncher(this.settings).openNow()
+        } catch (error) {
+            logger.error('Failed to open in Dev Container', error)
+        }
+    }
+
+    public async commandToggleDevContainerAutoOpenForProject(): Promise<void> {
+        const folder = vscode.workspace.workspaceFolders?.[0]
+        if (!folder) return
+        await this.settings.setDevContainerDisabled(folder.uri.fsPath, !this.settings.isDevContainerDisabled(folder.uri.fsPath))
         this.settingsTree.refresh()
     }
 

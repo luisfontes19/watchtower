@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { getDevContainerStatus } from '../devContainerLauncher'
 import { RuleRegistry } from '../rules'
 import { DevContainerToggleSetting, Settings } from '../settings'
 import { InlineFindingType, StartupScansMode } from '../types'
@@ -9,7 +10,7 @@ class SettingsItem extends vscode.TreeItem {
         description: string,
         tooltip: string,
         icon: vscode.ThemeIcon,
-        command: vscode.Command,
+        command?: vscode.Command,
         collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None,
     ) {
         super(label, collapsibleState)
@@ -43,6 +44,18 @@ class DevContainerGroupItem extends vscode.TreeItem {
     }
 }
 
+class ProjectDevContainerGroupItem extends vscode.TreeItem {
+    constructor(blocked: boolean) {
+        super('Dev Container (This Project)', vscode.TreeItemCollapsibleState.Expanded)
+        this.id = 'watchtower.projectDevContainer'
+        this.description = blocked ? 'Not opened automatically' : ''
+        this.tooltip = 'This project has a Dev Container configuration'
+        this.iconPath = blocked
+            ? new vscode.ThemeIcon('warning', new vscode.ThemeColor('editorWarning.foreground'))
+            : new vscode.ThemeIcon('remote')
+    }
+}
+
 class ProjectSettingsGroupItem extends vscode.TreeItem {
     constructor() {
         super('Project Settings', vscode.TreeItemCollapsibleState.Collapsed)
@@ -71,6 +84,7 @@ export class SettingsTreeProvider implements vscode.TreeDataProvider<vscode.Tree
     private projectSettingsGroup = new ProjectSettingsGroupItem()
 
     getChildren(element?: vscode.TreeItem): vscode.TreeItem[] {
+        const devContainer = getDevContainerStatus()
         if (!element) {
             return [
                 new SettingsItem(
@@ -95,12 +109,42 @@ export class SettingsTreeProvider implements vscode.TreeDataProvider<vscode.Tree
                     { command: 'watchtower.showReport', title: 'View Report' },
                 ),
 
+                ...(devContainer.available ? [new ProjectDevContainerGroupItem(devContainer.blockedReasons.length > 0)] : []),
                 this.globalSettingsGroup,
                 this.projectSettingsGroup,
             ]
         }
 
         const settings = Settings.getInstance()
+
+        if (element instanceof ProjectDevContainerGroupItem) {
+            const projectPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+            const autoOpen = projectPath ? !settings.isDevContainerDisabled(projectPath) : true
+            const reasons = devContainer.blockedReasons
+
+            return [
+                new SettingsItem(
+                    'Open in Container',
+                    '',
+                    'Reopen this project in its Dev Container now',
+                    new vscode.ThemeIcon('remote'),
+                    { command: 'watchtower.openInDevContainer', title: 'Open in Dev Container' },
+                ),
+                new SettingsItem(
+                    'Auto-open this project',
+                    enabledLabel(autoOpen),
+                    `Open this project in its Dev Container automatically on startup (when allowed by the Dev Container settings)\nClick to ${autoOpen ? 'disable' : 'enable'} for this project`,
+                    enabledIcon('rocket', autoOpen),
+                    { command: 'watchtower.toggleDevContainerAutoOpenForProject', title: 'Toggle Dev Container Auto-open for this Project' },
+                ),
+                ...reasons.map(reason => new SettingsItem(
+                    reason,
+                    '',
+                    `Watchtower did not open this project in its Dev Container automatically because:\n${reason}\n\nUse "Open in Container" if you trust this project.`,
+                    new vscode.ThemeIcon('warning', new vscode.ThemeColor('editorWarning.foreground')),
+                )),
+            ]
+        }
 
         if (element === this.globalSettingsGroup) {
             const startupScans = settings.getGlobalStartupScans()

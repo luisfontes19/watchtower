@@ -33,22 +33,50 @@ function isContainerEngineRunning(): Promise<boolean> {
     })
 }
 
+/** What the control panel shows about the current project's Dev Container */
+export interface DevContainerStatus {
+    /** The project has a devcontainer config and the window is local, so it can be opened in a container */
+    available: boolean
+    /** Why Watchtower declined to open the project automatically (security rules / trust) */
+    blockedReasons: string[]
+}
+
+let status: DevContainerStatus = { available: false, blockedReasons: [] }
+
+export function getDevContainerStatus(): DevContainerStatus {
+    return status
+}
+
 export class DevContainerLauncher {
 
-    constructor(private settings: Settings) { }
+    constructor(private settings: Settings, private onStatusChanged: () => void = () => { }) { }
+
+    private setStatus(next: DevContainerStatus): void {
+        status = next
+        this.onStatusChanged()
+    }
 
     /** Opens the workspace in its Dev Container when the user's settings allow it */
     public async run(): Promise<void> {
-        if (!this.settings.getDevContainerOpenByDefault()) return log('skipped: openByDefault is off')
+        status = { available: false, blockedReasons: [] }
         if (vscode.env.remoteName) return log(`skipped: already in a remote window (${vscode.env.remoteName})`) // avoids reopen loops
 
         const folder = vscode.workspace.workspaceFolders?.[0]
         if (!folder) return log('skipped: no workspace folder open')
         if (folder.uri.scheme !== 'file') return log(`skipped: workspace folder scheme is '${folder.uri.scheme}'`)
 
+        // detection runs even when auto-open is off, so the control panel can offer a manual open
         const configs = await this.findConfigs(folder.uri)
         if (configs.length === 0) return log('skipped: no devcontainer config found')
         logger.debug(`Dev Container: found ${configs.length} config(s): ${configs.map(c => vscode.workspace.asRelativePath(c, false)).join(', ')}`)
+        this.setStatus({ available: true, blockedReasons: [] })
+
+        if (this.settings.isDevContainerDisabled(folder.uri.fsPath)) return log('skipped: auto-open is disabled for this project')
+        if (!this.settings.getDevContainerOpenByDefault()) return log('skipped: openByDefault is off')
+
+        // a failed container build drops the user back in the local window, which would trigger this again
+        const cooldown = this.settings.devContainerCooldownRemainingMinutes(folder.uri.fsPath)
+        if (cooldown > 0) return log(`skipped: auto-open was already attempted recently, retrying in ${Math.ceil(cooldown)} min`)
 
         if (!vscode.extensions.getExtension(DEV_CONTAINERS_EXTENSION_ID))
             return log(`skipped: extension '${DEV_CONTAINERS_EXTENSION_ID}' is not installed`)
@@ -76,6 +104,7 @@ export class DevContainerLauncher {
         }
 
         log(`blocked: ${reasons.join('; ')}`)
+        this.setStatus({ available: true, blockedReasons: reasons })
         await this.promptBlocked(folder.uri.fsPath, reasons)
     }
 
@@ -121,6 +150,15 @@ export class DevContainerLauncher {
         }
     }
 
+    /** Opens the current project in its Dev Container on the user's request, skipping every automatic check */
+    public async openNow(): Promise<void> {
+        if (!vscode.extensions.getExtension(DEV_CONTAINERS_EXTENSION_ID)) {
+            vscode.window.showWarningMessage(`Install the Dev Containers extension (${DEV_CONTAINERS_EXTENSION_ID}) to open this project in its container.`)
+            return
+        }
+        await this.open()
+    }
+
     private async open(): Promise<void> {
         if (!(await isContainerEngineRunning())) {
             const choice = await vscode.window.showWarningMessage(
@@ -132,6 +170,8 @@ export class DevContainerLauncher {
         }
 
         try {
+            const folder = vscode.workspace.workspaceFolders?.[0]
+            if (folder) await this.settings.recordDevContainerAttempt(folder.uri.fsPath)
             await vscode.commands.executeCommand(REOPEN_COMMAND)
         } catch (error) {
             log(`'${REOPEN_COMMAND}' failed: ${error}`)

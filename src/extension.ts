@@ -56,6 +56,8 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('watchtower.editWorkspaceExcludedFolders', watchtower.commandEditWorkspaceExcludedFolders.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.toggleAutoUninstallMalicious', watchtower.commandToggleAutoUninstallMalicious.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.toggleDevContainerSetting', (key: DevContainerToggleSetting) => watchtower.commandToggleDevContainerSetting(key)),
+		vscode.commands.registerCommand('watchtower.openInDevContainer', watchtower.commandOpenInDevContainer.bind(watchtower)),
+		vscode.commands.registerCommand('watchtower.toggleDevContainerAutoOpenForProject', watchtower.commandToggleDevContainerAutoOpenForProject.bind(watchtower)),
 		vscode.commands.registerCommand('watchtower.excludeFile', (uri: vscode.Uri) => watchtower.commandExcludeFile(uri)),
 		vscode.commands.registerCommand('watchtower.includeFile', (uri: vscode.Uri) => watchtower.commandIncludeFile(uri)),
 	]
