@@ -6,7 +6,8 @@ import { StaticAnalyzer } from './staticAnalyzer'
 export class LongWhitespaceContentAnalyzer extends StaticAnalyzer {
 
     // Horizontal whitespace run before content on the same line.
-    public static readonly LONG_WHITESPACE_WITH_CONTENT = /[ \t]{200,}(?=\S)/g
+    // Content starting with a pipe is ignored, since it is likely a padded table cell.
+    public static readonly LONG_WHITESPACE_WITH_CONTENT = /[ \t]{200,}(?=[^\s|])/g
 
     alertOnEditedInBackground(): boolean {
         return false

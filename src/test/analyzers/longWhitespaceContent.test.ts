@@ -28,6 +28,11 @@ suite('LongWhitespaceContentAnalyzer', () => {
             const text = `const a = 1;${' '.repeat(220)}`
             assert.strictEqual(Boolean(text.match(LongWhitespaceContentAnalyzer.LONG_WHITESPACE_WITH_CONTENT)), false)
         })
+
+        test('does not match long whitespace followed by a pipe (table padding)', () => {
+            const text = `| name${' '.repeat(220)}| value |`
+            assert.strictEqual(Boolean(text.match(LongWhitespaceContentAnalyzer.LONG_WHITESPACE_WITH_CONTENT)), false)
+        })
     })
 
     suite('findLongWhitespaceBeforeContent', () => {
